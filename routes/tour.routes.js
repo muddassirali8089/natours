@@ -4,15 +4,20 @@ import {
   getTour,
   createTour,
   updateTour,
-  deleteTour
+  deleteTour,
+  checkId
 } from '../controllers/tour.controller.js';
 
 const router = express.Router();
 
-router.get("/" , getAllTours);
-router.post("/" , createTour);
-router.get("/:id" , getTour);
-router.patch("/:id" , updateTour);
-router.delete("/:id" , deleteTour);
+// 💡 This middleware will run ONLY when :id is present in the route
+router.param('id', checkId);
+
+// Routes
+router.get("/", getAllTours);
+router.post("/", createTour);
+router.get("/:id", getTour);
+router.patch("/:id", updateTour);
+router.delete("/:id", deleteTour);
 
 export default router;

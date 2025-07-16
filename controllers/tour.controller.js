@@ -1,21 +1,30 @@
-
 import fs from "fs";
 
 import path from "path";
 import { fileURLToPath } from "url";
 
-
 // Define __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 
 const tours = JSON.parse(
   fs.readFileSync(path.join(__dirname, "../dev-data/data/tours-simple.json"))
 );
 
+export const checkId = (req, res, next, val) => {
+  console.log(`the params middleware run for tour and id is ${val}`);
 
+  const id = req.params.id * 1;
 
+  if (id > tours.length) {
+    return res.status(404).json({
+      status: "fail",
+      message: "invalid ID",
+    });
+  }
+
+  next();
+};
 
 export const getAllTours = (req, res) => {
   res.status(200).json({
@@ -26,20 +35,19 @@ export const getAllTours = (req, res) => {
       tours: tours,
     },
   });
-}
-
+};
 
 export const getTour = (req, res) => {
-  const id = req.params.id * 1;
+    const id = req.params.id * 1;
 
   const tour = tours.find((el) => el.id === id);
   // if (id > tours.length)
-  if (!tour) {
-    return res.status(404).json({
-      status: "fail",
-      message: "incalid ID",
-    });
-  }
+  // if (!tour) {
+  //   return res.status(404).json({
+  //     status: "fail",
+  //     message: "incalid ID",
+  //   });
+  // }
 
   res.status(200).json({
     status: "success",
@@ -47,8 +55,7 @@ export const getTour = (req, res) => {
       tour,
     },
   });
-}
-
+};
 
 export const createTour = (req, res) => {
   const newId = tours[tours.length - 1].id + 1;
@@ -68,19 +75,17 @@ export const createTour = (req, res) => {
       });
     }
   );
-}
-
+};
 
 export const updateTour = (req, res) => {
-  const id = req.params.id * 1;
+  // const id = req.params.id * 1;
 
-
-  if (id > tours.length) {
-   return res.status(404).json({
-      status: "fail",
-      message: "invalid ID",
-    });
-  }
+  // if (id > tours.length) {
+  //   return res.status(404).json({
+  //     status: "fail",
+  //     message: "invalid ID",
+  //   });
+  // }
 
   res.status(200).json({
     status: "success",
@@ -88,25 +93,11 @@ export const updateTour = (req, res) => {
       tour: "<updated tour here>",
     },
   });
-}
-
+};
 
 export const deleteTour = (req, res) => {
-  const id = req.params.id * 1;
-
-
-  if (id > tours.length) {
-    return res.status(404).json({
-      status: "fail",
-      message: "invalid ID",
-    });
-  }
-
   res.status(204).json({
     status: "success",
-    data: null
+    data: null,
   });
-}
-
-
-
+};
