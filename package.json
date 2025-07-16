@@ -20,6 +20,7 @@
   "homepage": "https://github.com/muddassirali8089/natours#readme",
   "dependencies": {
     "express": "^5.1.0",
+    "morgan": "^1.10.0",
     "nodemon": "^3.1.10"
   }
 }

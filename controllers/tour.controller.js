@@ -14,10 +14,14 @@ const tours = JSON.parse(
   fs.readFileSync(path.join(__dirname, "../dev-data/data/tours-simple.json"))
 );
 
+
+
+
 export const getAllTours = (req, res) => {
   res.status(200).json({
     status: "success",
     results: tours.length,
+    requestedAt: req.requestTime,
     data: {
       tours: tours,
     },
