@@ -5,7 +5,8 @@ import {
   createTour,
   updateTour,
   deleteTour,
-  checkId
+  checkId,
+  validateTour
 } from '../controllers/tour.controller.js';
 
 const router = express.Router();
@@ -15,7 +16,7 @@ router.param('id', checkId);
 
 // Routes
 router.get("/", getAllTours);
-router.post("/", createTour);
+router.post("/", validateTour,createTour);
 router.get("/:id", getTour);
 router.patch("/:id", updateTour);
 router.delete("/:id", deleteTour);

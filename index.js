@@ -1,30 +1,45 @@
 import express from 'express';
 import morgan from 'morgan';
-import tourRouter from './routes/tour.routes.js';
-import userRouter from "./routes/user.routes.js"
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+import tourRouter from './routes/tour.routes.js';
+import userRouter from './routes/user.routes.js';
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+dotenv.config(); // load config.env
 const app = express();
-app.use(morgan("dev"))
+
 
 app.use(express.json());
-const port = 8000;
+app.use(express.static(`${__dirname}/public`));
 
-app.listen(port , (res , req) => {
-  console.log(`server is listing on ${port}`);
-  
-})
+console.log("NODE_ENV:", process.env.NODE_ENV);
 
-// Mount routes
-
-
-
+// ✅ Only use morgan in development
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+  console.log("true..")
+}
 
 
 
-app.use((req , res , next) => {
+const port = process.env.PORT || 8000;
+
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});
+
+app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
-})
+});
+
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 
