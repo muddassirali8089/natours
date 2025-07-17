@@ -26,8 +26,6 @@
 //   next();
 // };
 
-
-
 // export const validateTour = (req, res, next) => {
 //   const { name, price } = req.body;
 
@@ -41,10 +39,7 @@
 //   next();
 // };
 
-
-import Tour from '../models/tour.model.js';
-
-
+import Tour from "../models/tour.model.js";
 
 export const createTour = async (req, res) => {
   try {
@@ -55,63 +50,64 @@ export const createTour = async (req, res) => {
     res.status(201).json({
       status: "success",
       data: {
-        tour: newTour
-      }
+        tour: newTour,
+      },
     });
-
   } catch (err) {
     res.status(400).json({
       status: "fail",
-      message: err
+      message: err,
     });
   }
 };
 
+export const getAllTours = async (req, res) => {
+  try {
+    const tours = await Tour.find();
 
-export const getAllTours = (req, res) => {
-
-  // res.status(200).json({
-  //   status: "success",
-  //   results: tours.length,
-  //   requestedAt: req.requestTime,
-  //   data: {
-  //     tours: tours,
-  //   },
-  // });
+    res.status(200).json({
+      status: "success",
+      results: tours.length,
+      data: {
+        tours: tours,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
 };
 
-export const getTour = (req, res) => {
-    // const id = req.params.id * 1;
+export const getTour = async (req, res) => {
+  try {
+    const tour = await Tour.findById(req.params.id);
 
-  // const tour = tours.find((el) => el.id === id);
-  // if (id > tours.length)
-  // if (!tour) {
-  //   return res.status(404).json({
-  //     status: "fail",
-  //     message: "incalid ID",
-  //   });
-  // }
+    // const tour = await Tour.findOne({_id: req.params.id})
 
-  // res.status(200).json({
-  //   status: "success",
-  //   data: {
-  //     tour,
-  //   },
-  // });
+    res.status(200).json({
+      status: "success",
+      data: {
+        tour,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
 };
-
-
 
 export const updateTour = (req, res) => {
   // const id = req.params.id * 1;
-
   // if (id > tours.length) {
   //   return res.status(404).json({
   //     status: "fail",
   //     message: "invalid ID",
   //   });
   // }
-
   // res.status(200).json({
   //   status: "success",
   //   data: {
