@@ -63,22 +63,32 @@ export const createTour = async (req, res) => {
 
 export const getAllTours = async (req, res) => {
   try {
-    const tours = await Tour.find();
+    // 1️⃣ Build query object dynamically from query params
+    const queryObj = { ...req.query }; // e.g. { difficulty: 'easy', duration: '5' }
 
+    // Optional: Remove special query keys like "sort", "fields", "page", etc. here if needed
+    // const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    // excludedFields.forEach((el) => delete queryObj[el]);
+
+    // 2️⃣ Run the query
+    const tours = await Tour.find(queryObj); // Mongoose automatically converts to MongoDB filter
+
+    // 3️⃣ Send response
     res.status(200).json({
       status: "success",
       results: tours.length,
       data: {
-        tours: tours,
+        tours,
       },
     });
   } catch (err) {
     res.status(404).json({
       status: "fail",
-      message: err,
+      message: err.message,
     });
   }
 };
+
 
 export const getTour = async (req, res) => {
   try {
