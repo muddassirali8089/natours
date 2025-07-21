@@ -40,6 +40,7 @@
 // };
 
 import Tour from "../models/tour.model.js";
+import qs from 'qs';
 
 export const createTour = async (req, res) => {
   try {
@@ -63,36 +64,35 @@ export const createTour = async (req, res) => {
 
 export const getAllTours = async (req, res) => {
   try {
-    // 1️⃣ Copy the query object
-    let queryObj = { ...req.query };
+    // 1️⃣ Parse query string into an object (handles nested structures)
+    const queryObj = qs.parse(req.query, { allowDots: true });
 
-    // 2️⃣ Exclude special fields
+    // 2️⃣ Remove excluded fields
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
-    excludedFields.forEach((field) => delete queryObj[field]);
-    console.log(excludedFields);
-    
+    excludedFields.forEach(field => delete queryObj[field]);
 
-    // 3️⃣ Build the Mongoose query
-    const query = Tour.find(queryObj);
+    // 3️⃣ Convert to JSON string
+    let queryStr = JSON.stringify(queryObj);
 
-    // 4️⃣ Execute query
-    const tours = await query;
+    // 4️⃣ Replace MongoDB operators
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
 
-    // 5️⃣ Send response
+    console.log(JSON.parse(queryStr)); // Should now be valid
+
+    // 5️⃣ Run query
+    const tours = await Tour.find(JSON.parse(queryStr));
+
     res.status(200).json({
       status: 'success',
       results: tours.length,
-      data: {
-        tours,
-      },
+      data: { tours },
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err.message,
-    });
+    res.status(400).json({ status: 'fail', message: err.message });
   }
 };
+
+
 
 
 
