@@ -40,7 +40,7 @@
 // };
 
 import Tour from "../models/tour.model.js";
-import qs from 'qs';
+import qs from "qs";
 
 export const createTour = async (req, res) => {
   try {
@@ -64,37 +64,43 @@ export const createTour = async (req, res) => {
 
 export const getAllTours = async (req, res) => {
   try {
-    // 1️⃣ Parse query string into an object (handles nested structures)
     const queryObj = qs.parse(req.query, { allowDots: true });
 
+    console.log(queryObj);
+
     // 2️⃣ Remove excluded fields
-    const excludedFields = ['page', 'sort', 'limit', 'fields'];
-    excludedFields.forEach(field => delete queryObj[field]);
+    const excludedFields = ["page", "sort", "limit", "fields"];
+    excludedFields.forEach((field) => delete queryObj[field]);
+
+    console.log(queryObj);
 
     // 3️⃣ Convert to JSON string
     let queryStr = JSON.stringify(queryObj);
 
-    // 4️⃣ Replace MongoDB operators
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
+    console.log(queryStr);
 
-    console.log(JSON.parse(queryStr)); // Should now be valid
+    // 4️⃣ Replace MongoDB operators
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+
+    let query = Tour.find(JSON.parse(queryStr));
+
+    if (typeof req.query.sort === "string") {
+      const sortBy = req.query.sort.split(",").join(" ");
+      query = query.sort(sortBy);
+    } 
 
     // 5️⃣ Run query
-    const tours = await Tour.find(JSON.parse(queryStr));
+    const tours = await query;
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       results: tours.length,
       data: { tours },
     });
   } catch (err) {
-    res.status(400).json({ status: 'fail', message: err.message });
+    res.status(400).json({ status: "fail", message: err.message });
   }
 };
-
-
-
-
 
 export const getTour = async (req, res) => {
   try {
