@@ -38,7 +38,7 @@
 
 //   next();
 // };
-
+import qs from "qs";
 import Tour from "../models/tour.model.js";
 
 
@@ -77,78 +77,56 @@ export const aliasTopTours = (req, res, next) => {
   next();
 };
 
-
-
-
-
-
-
 export const getAllTours = async (req, res) => {
-  let queryObj = { ...(req.queryOptions || req.query) };
 
-  console.log("✅ Initial Query Object:", queryObj);
+  console.log(req.queryOptions);
+  
+  const rawQuery = req.queryOptions || req.query;
+
+  // Parse and nest filters using qs
+  let queryStr = qs.stringify(rawQuery);
+  const formattedQuery = qs.parse(queryStr);
+
+  console.log("✅ Formatted query (qs):", formattedQuery);
 
   try {
-    let formattedQuery = {};
-
-    // ✅ Extract and format filters like duration[gte]=5
-    for (let [key, value] of Object.entries(queryObj)) {
-      const match = key.match(/^(.+)\[(.+)\]$/);
-
-      if (match) {
-        const field = match[1];
-        const operator = match[2];
-
-        if (!formattedQuery[field]) {
-          formattedQuery[field] = {};
-        }
-
-        formattedQuery[field][operator] = isNaN(value) ? value : Number(value);
-      } else {
-        formattedQuery[key] = isNaN(value) ? value : Number(value);
-      }
-    }
-
-    console.log("✅ Formatted query (before MongoDB operators):", formattedQuery);
-
     // ❌ Remove special params before querying MongoDB
     const excludedFields = ["page", "sort", "limit", "fields"];
     excludedFields.forEach((field) => delete formattedQuery[field]);
 
     // 🔄 Convert to MongoDB query with operators like $gte
-    let queryStr = JSON.stringify(formattedQuery);
+    queryStr = JSON.stringify(formattedQuery);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    const mongoQuery = JSON.parse(queryStr);
-    console.log("✅ Final MongoDB Query:", mongoQuery);
+    const queryObj = JSON.parse(queryStr);
+    console.log("✅ Final MongoDB Query:", queryObj);
 
     // 🔍 Execute query
-    let query = Tour.find(mongoQuery);
+    let query = Tour.find(queryObj);
 
     // ✅ Apply Sorting
-    if (typeof queryObj.sort === "string") {
-      const sortBy = queryObj.sort.split(",").join(" ");
+    if (typeof rawQuery.sort === "string") {
+      const sortBy = rawQuery.sort.split(",").join(" ");
       query = query.sort(sortBy);
     } else {
       query = query.sort("-createdAt");
     }
 
     // ✅ Apply Field Limiting
-    if (typeof queryObj.fields === "string") {
-      const fields = queryObj.fields.split(",").join(" ");
+    if (typeof rawQuery.fields === "string") {
+      const fields = rawQuery.fields.split(",").join(" ");
       query = query.select(fields);
     } else {
-      query = query.select("-__v"); // hide internal fields by default
+      query = query.select("-__v");
     }
 
     // ✅ Pagination Logic
-    const page = parseInt(queryObj.page) || 1;
-    const limit = parseInt(queryObj.limit) || 100;
+    const page = parseInt(rawQuery.page) || 1;
+    const limit = parseInt(rawQuery.limit) || 100;
     const skip = (page - 1) * limit;
-
     query = query.skip(skip).limit(limit);
 
-    // Optional: Check if page exists
-    const total = await Tour.countDocuments(mongoQuery);
+    // Optional: Page existence check
+    const total = await Tour.countDocuments(query);
     if (skip >= total) throw new Error("This page does not exist");
 
     // 🟢 Execute Final Query
@@ -166,6 +144,7 @@ export const getAllTours = async (req, res) => {
     });
   }
 };
+
 
 
 export const getTour = async (req, res) => {
