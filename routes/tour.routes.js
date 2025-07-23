@@ -5,6 +5,7 @@ import {
   createTour,
   updateTour,
   deleteTour,
+  aliasTopTours
  
 } from '../controllers/tour.controller.js';
 
@@ -14,6 +15,8 @@ const router = express.Router();
 // router.param('id', checkId);
 
 // Routes
+
+router.get('/top-5-cheap' , aliasTopTours , getAllTours)
 router.get("/", getAllTours);
 router.post("/", createTour);
 router.get("/:id", getTour);

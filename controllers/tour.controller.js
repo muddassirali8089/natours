@@ -40,7 +40,7 @@
 // };
 
 import Tour from "../models/tour.model.js";
-import qs from "qs";
+
 
 export const createTour = async (req, res) => {
   try {
@@ -62,34 +62,96 @@ export const createTour = async (req, res) => {
   }
 };
 
+
+
+export const aliasTopTours = (req, res, next) => {
+  req.queryOptions = {
+    limit: '5',
+    sort: '-ratingsAverage,price',
+    fields: 'name,price,ratingsAverage,summary,difficulty'
+  };
+
+  console.log("✅ aliasTopTours middleware executed");
+  console.log("✅ req.queryOptions:", req.queryOptions);
+
+  next();
+};
+
+
+
+
+
+
+
 export const getAllTours = async (req, res) => {
+  let queryObj = { ...(req.queryOptions || req.query) };
+
+  console.log("✅ Initial Query Object:", queryObj);
+
   try {
-    const queryObj = qs.parse(req.query, { allowDots: true });
+    let formattedQuery = {};
 
-    console.log(queryObj);
+    // ✅ Extract and format filters like duration[gte]=5
+    for (let [key, value] of Object.entries(queryObj)) {
+      const match = key.match(/^(.+)\[(.+)\]$/);
 
-    // 2️⃣ Remove excluded fields
+      if (match) {
+        const field = match[1];
+        const operator = match[2];
+
+        if (!formattedQuery[field]) {
+          formattedQuery[field] = {};
+        }
+
+        formattedQuery[field][operator] = isNaN(value) ? value : Number(value);
+      } else {
+        formattedQuery[key] = isNaN(value) ? value : Number(value);
+      }
+    }
+
+    console.log("✅ Formatted query (before MongoDB operators):", formattedQuery);
+
+    // ❌ Remove special params before querying MongoDB
     const excludedFields = ["page", "sort", "limit", "fields"];
-    excludedFields.forEach((field) => delete queryObj[field]);
+    excludedFields.forEach((field) => delete formattedQuery[field]);
 
-    console.log(queryObj);
-
-    // 3️⃣ Convert to JSON string
-    let queryStr = JSON.stringify(queryObj);
-
-    console.log(queryStr);
-
-    // 4️⃣ Replace MongoDB operators
+    // 🔄 Convert to MongoDB query with operators like $gte
+    let queryStr = JSON.stringify(formattedQuery);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+    const mongoQuery = JSON.parse(queryStr);
+    console.log("✅ Final MongoDB Query:", mongoQuery);
 
-    let query = Tour.find(JSON.parse(queryStr));
+    // 🔍 Execute query
+    let query = Tour.find(mongoQuery);
 
-    if (typeof req.query.sort === "string") {
-      const sortBy = req.query.sort.split(",").join(" ");
+    // ✅ Apply Sorting
+    if (typeof queryObj.sort === "string") {
+      const sortBy = queryObj.sort.split(",").join(" ");
       query = query.sort(sortBy);
-    } 
+    } else {
+      query = query.sort("-createdAt");
+    }
 
-    // 5️⃣ Run query
+    // ✅ Apply Field Limiting
+    if (typeof queryObj.fields === "string") {
+      const fields = queryObj.fields.split(",").join(" ");
+      query = query.select(fields);
+    } else {
+      query = query.select("-__v"); // hide internal fields by default
+    }
+
+    // ✅ Pagination Logic
+    const page = parseInt(queryObj.page) || 1;
+    const limit = parseInt(queryObj.limit) || 100;
+    const skip = (page - 1) * limit;
+
+    query = query.skip(skip).limit(limit);
+
+    // Optional: Check if page exists
+    const total = await Tour.countDocuments(mongoQuery);
+    if (skip >= total) throw new Error("This page does not exist");
+
+    // 🟢 Execute Final Query
     const tours = await query;
 
     res.status(200).json({
@@ -98,9 +160,13 @@ export const getAllTours = async (req, res) => {
       data: { tours },
     });
   } catch (err) {
-    res.status(400).json({ status: "fail", message: err.message });
+    res.status(400).json({
+      status: "fail",
+      message: err.message,
+    });
   }
 };
+
 
 export const getTour = async (req, res) => {
   try {
