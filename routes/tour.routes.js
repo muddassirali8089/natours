@@ -5,18 +5,19 @@ import {
   createTour,
   updateTour,
   deleteTour,
-  aliasTopTours
- 
+  aliasTopTours,
+  getTourStats
 } from '../controllers/tour.controller.js';
 
 const router = express.Router();
 
-// 💡 This middleware will run ONLY when :id is present in the route
-// router.param('id', checkId);
+// Custom route for top 5 cheap tours
+router.get('/top-5-cheap', aliasTopTours, getAllTours);
 
-// Routes
+// Aggregation stats route
+router.get('/tour-stats', getTourStats);
 
-router.get('/top-5-cheap' , aliasTopTours , getAllTours)
+// RESTful routes
 router.get("/", getAllTours);
 router.post("/", createTour);
 router.get("/:id", getTour);
