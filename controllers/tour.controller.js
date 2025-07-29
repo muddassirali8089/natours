@@ -154,19 +154,7 @@ export const updateTour = async (req, res) => {
       message: err,
     });
   }
-  // const id = req.params.id * 1;
-  // if (id > tours.length) {
-  //   return res.status(404).json({
-  //     status: "fail",
-  //     message: "invalid ID",
-  //   });
-  // }
-  // res.status(200).json({
-  //   status: "success",
-  //   data: {
-  //     tour: "<updated tour here>",
-  //   },
-  // });
+  
 };
 
 export const deleteTour = async (req, res) => {
@@ -200,7 +188,34 @@ export const getTourStats = async (req, res) => {
           avgRating: { $avg: "$ratingsAverage" },
           avgPrice: { $avg: "$price" },
           minPrice: { $min: "$price" },
-          maxPrice: { $max: "$price" }
+          maxPrice: { $max: "$price" },
+          totalRevenue: { $sum: { $multiply: ["$price", "$maxGroupSize"] } },
+          popularLocations: { $addToSet: "$startLocation.description" }
+        }
+      },
+      {
+        $addFields: {
+          difficulty: "$_id", // Add a more readable field name
+          priceRange: { // Create a price range string
+            $concat: [
+              { $toString: "$minPrice" },
+              " - ",
+              { $toString: "$maxPrice" }
+            ]
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0, // Remove the _id field
+          difficulty: 1,
+          numTours: 1,
+          numRatings: 1,
+          avgRating: { $round: ["$avgRating", 1] }, // Round to 1 decimal
+          avgPrice: { $round: ["$avgPrice", 2] }, // Round to 2 decimals
+          priceRange: 1,
+          totalRevenue: 1,
+          popularLocations: 1
         }
       },
       {
@@ -210,10 +225,203 @@ export const getTourStats = async (req, res) => {
 
     res.status(200).json({
       status: "success",
+      results: stats.length,
       data: { stats }
     });
   } catch (err) {
+    res.status(400).json({ 
+      status: "fail", 
+      message: err.message 
+    });
+  }
+};
+
+
+export const getGeneralTourStats = async (req, res) => {
+  try {
+    const stats = await Tour.aggregate([
+      {
+        $facet: {
+          totalTours: [{ $count: "count" }],
+          toursByDifficulty: [
+            {
+              $group: {
+                _id: "$difficulty",
+                count: { $sum: 1 },
+                avgPrice: { $avg: "$price" }
+              }
+            }
+          ],
+          priceStatistics: [
+            {
+              $group: {
+                _id: null,
+                avgPrice: { $avg: "$price" },
+                minPrice: { $min: "$price" },
+                maxPrice: { $max: "$price" }
+              }
+            }
+          ],
+          ratingStatistics: [
+            {
+              $group: {
+                _id: null,
+                avgRating: { $avg: "$ratingsAverage" },
+                minRating: { $min: "$ratingsAverage" },
+                maxRating: { $max: "$ratingsAverage" }
+              }
+            }
+          ]
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        totalTours: stats[0].totalTours[0]?.count || 0,
+        toursByDifficulty: stats[0].toursByDifficulty,
+        priceStats: stats[0].priceStatistics[0] || {},
+        ratingStats: stats[0].ratingStatistics[0] || {}
+      }
+    });
+  } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });
+  }
+};
+
+export const getMonthlyPlan = async (req, res) => {
+  try {
+    const year = req.params.year * 1; // 2024
+    
+    const plan = await Tour.aggregate([
+      {
+        $unwind: "$startDates"
+      },
+      {
+        $match: {
+          startDates: {
+            $gte: new Date(`${year}-01-01`),
+            $lte: new Date(`${year}-12-31`)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { $month: "$startDates" },
+          numTourStarts: { $sum: 1 },
+          tours: { $push: "$name" },
+          avgGroupSize: { $avg: "$maxGroupSize" }
+        }
+      },
+      {
+        $addFields: { month: "$_id" }
+      },
+      {
+        $project: {
+          _id: 0
+        }
+      },
+      {
+        $sort: { month: 1 }
+      }
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        year,
+        monthlyStats: plan
+      }
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: "fail",
+      message: err.message
+    });
+  }
+};
+
+
+// Add these to your tour.controller.js file
+
+export const getToursWithin = async (req, res) => {
+  try {
+    const { distance, latlng, unit } = req.params;
+    const [lat, lng] = latlng.split(',');
+
+    if (!lat || !lng) {
+      throw new Error('Please provide latitude and longitude in the format lat,lng');
+    }
+
+    const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+
+    const tours = await Tour.find({
+      startLocation: {
+        $geoWithin: {
+          $centerSphere: [[lng, lat], radius]
+        }
+      }
+    });
+
+    res.status(200).json({
+      status: 'success',
+      results: tours.length,
+      data: {
+        data: tours
+      }
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err.message
+    });
+  }
+};
+
+export const getDistances = async (req, res) => {
+  try {
+    const { latlng, unit } = req.params;
+    const [lat, lng] = latlng.split(',');
+
+    if (!lat || !lng) {
+      throw new Error('Please provide latitude and longitude in the format lat,lng');
+    }
+
+    const multiplier = unit === 'mi' ? 0.000621371 : 0.001;
+
+    const distances = await Tour.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [lng * 1, lat * 1]
+          },
+          distanceField: 'distance',
+          distanceMultiplier: multiplier
+        }
+      },
+      {
+        $project: {
+          distance: 1,
+          name: 1,
+          duration: 1,
+          difficulty: 1
+        }
+      }
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        data: distances
+      }
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err.message
+    });
   }
 };
 
