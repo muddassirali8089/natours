@@ -1,4 +1,3 @@
-
 import Tour from "../models/tour.model.js";
 import qs from "qs";
 import { APIFeatures } from "../utils/apiFeatures.js";
@@ -38,8 +37,6 @@ export const aliasTopTours = (req, res, next) => {
 
 // utils/apiFeatures.js
 
-
-
 export const getAllTours = async (req, res) => {
   const rawQuery = req.queryOptions || req.query;
 
@@ -66,53 +63,52 @@ export const getAllTours = async (req, res) => {
     });
   }
 
-
-   // Parse and nest filters using qs
+  // Parse and nest filters using qs
   // let queryStr = qs.stringify(rawQuery);
   // const formattedQuery = qs.parse(queryStr);
 
   // console.log("✅ Formatted query (qs):", formattedQuery);
 
-    // ❌ Remove special params before querying MongoDB
-    // const excludedFields = ["page", "sort", "limit", "fields"];
-    // excludedFields.forEach((field) => delete formattedQuery[field]);
+  // ❌ Remove special params before querying MongoDB
+  // const excludedFields = ["page", "sort", "limit", "fields"];
+  // excludedFields.forEach((field) => delete formattedQuery[field]);
 
-    // // 🔄 Convert to MongoDB query with operators like $gte
-    // queryStr = JSON.stringify(formattedQuery);
-    // queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
-    // const queryObj = JSON.parse(queryStr);
-    // console.log("✅ Final MongoDB Query:", queryObj);
+  // // 🔄 Convert to MongoDB query with operators like $gte
+  // queryStr = JSON.stringify(formattedQuery);
+  // queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+  // const queryObj = JSON.parse(queryStr);
+  // console.log("✅ Final MongoDB Query:", queryObj);
 
-    // 🔍 Execute query
-    // let query = Tour.find(queryObj);
+  // 🔍 Execute query
+  // let query = Tour.find(queryObj);
 
-    // ✅ Apply Sorting
-    // if (typeof rawQuery.sort === "string") {
-    //   const sortBy = rawQuery.sort.split(",").join(" ");
-    //   query = query.sort(sortBy);
-    // } else {
-    //   query = query.sort("-createdAt");
-    // }
+  // ✅ Apply Sorting
+  // if (typeof rawQuery.sort === "string") {
+  //   const sortBy = rawQuery.sort.split(",").join(" ");
+  //   query = query.sort(sortBy);
+  // } else {
+  //   query = query.sort("-createdAt");
+  // }
 
-    // ✅ Apply Field Limiting
-    // if (typeof rawQuery.fields === "string") {
-    //   const fields = rawQuery.fields.split(",").join(" ");
-    //   query = query.select(fields);
-    // } else {
-    //   query = query.select("-__v");
-    // }
+  // ✅ Apply Field Limiting
+  // if (typeof rawQuery.fields === "string") {
+  //   const fields = rawQuery.fields.split(",").join(" ");
+  //   query = query.select(fields);
+  // } else {
+  //   query = query.select("-__v");
+  // }
 
-    // ✅ Pagination Logic
-    // const page = parseInt(rawQuery.page) || 1;
-    // const limit = parseInt(rawQuery.limit) || 100;
-    // const skip = (page - 1) * limit;
-    // query = query.skip(skip).limit(limit);
+  // ✅ Pagination Logic
+  // const page = parseInt(rawQuery.page) || 1;
+  // const limit = parseInt(rawQuery.limit) || 100;
+  // const skip = (page - 1) * limit;
+  // query = query.skip(skip).limit(limit);
 
-    // // Optional: Page existence check
-    // const total = await Tour.countDocuments(query);
-    // if (skip >= total) throw new Error("This page does not exist");
+  // // Optional: Page existence check
+  // const total = await Tour.countDocuments(query);
+  // if (skip >= total) throw new Error("This page does not exist");
 
-    // 🟢 Execute Final Query
+  // 🟢 Execute Final Query
 };
 
 export const getTour = async (req, res) => {
@@ -154,7 +150,6 @@ export const updateTour = async (req, res) => {
       message: err,
     });
   }
-  
 };
 
 export const deleteTour = async (req, res) => {
@@ -173,69 +168,105 @@ export const deleteTour = async (req, res) => {
   }
 };
 
-
 export const getTourStats = async (req, res) => {
   try {
     const stats = await Tour.aggregate([
       {
-        $match: { ratingsAverage: { $gte: 4.5 } } // Filter high-rated tours
+        $match: { ratingsAverage: { $gte: 4.5 } },
       },
       {
         $group: {
-          _id: "$difficulty",
-          numTours: { $sum: 1 },
-          numRatings: { $sum: "$ratingsQuantity" },
+          _id: {$toUpper:'$difficulty'},
+          numTours:{$sum: 1},
+          numRating:{$sum:"$ratingsQuantity"},
           avgRating: { $avg: "$ratingsAverage" },
           avgPrice: { $avg: "$price" },
           minPrice: { $min: "$price" },
           maxPrice: { $max: "$price" },
-          totalRevenue: { $sum: { $multiply: ["$price", "$maxGroupSize"] } },
-          popularLocations: { $addToSet: "$startLocation.description" }
-        }
+        },
       },
       {
-        $addFields: {
-          difficulty: "$_id", // Add a more readable field name
-          priceRange: { // Create a price range string
-            $concat: [
-              { $toString: "$minPrice" },
-              " - ",
-              { $toString: "$maxPrice" }
-            ]
-          }
+        $sort:{
+          avgPrice : 1
         }
-      },
-      {
-        $project: {
-          _id: 0, // Remove the _id field
-          difficulty: 1,
-          numTours: 1,
-          numRatings: 1,
-          avgRating: { $round: ["$avgRating", 1] }, // Round to 1 decimal
-          avgPrice: { $round: ["$avgPrice", 2] }, // Round to 2 decimals
-          priceRange: 1,
-          totalRevenue: 1,
-          popularLocations: 1
-        }
-      },
-      {
-        $sort: { avgPrice: 1 } // Sort by average price ascending
       }
     ]);
 
     res.status(200).json({
       status: "success",
-      results: stats.length,
-      data: { stats }
+      data: {
+        stats
+      }
     });
   } catch (err) {
-    res.status(400).json({ 
-      status: "fail", 
-      message: err.message 
+    res.status(404).json({
+      status: "fail",
+      message: err,
     });
   }
 };
 
+// export const getTourStats = async (req, res) => {
+//   try {
+//     const stats = await Tour.aggregate([
+//       {
+//         $match: { ratingsAverage: { $gte: 4.5 } } // Filter high-rated tours
+//       },
+//       {
+//         $group: {
+//           _id: "$difficulty",
+//           numTours: { $sum: 1 },
+//           numRatings: { $sum: "$ratingsQuantity" },
+//           avgRating: { $avg: "$ratingsAverage" },
+//           avgPrice: { $avg: "$price" },
+//           minPrice: { $min: "$price" },
+//           maxPrice: { $max: "$price" },
+//           totalRevenue: { $sum: { $multiply: ["$price", "$maxGroupSize"] } },
+//           popularLocations: { $addToSet: "$startLocation.description" }
+//         }
+//       },
+//       {
+//         $addFields: {
+//           difficulty: "$_id", // Add a more readable field name
+//           priceRange: { // Create a price range string
+//             $concat: [
+//               { $toString: "$minPrice" },
+//               " - ",
+//               { $toString: "$maxPrice" }
+//             ]
+//           }
+//         }
+//       },
+//       {
+//         $project: {
+//           _id: 0, // Remove the _id field
+//           difficulty: 1,
+//           numTours: 1,
+//           numRatings: 1,
+//           avgRating: { $round: ["$avgRating", 1] }, // Round to 1 decimal
+//           avgPrice: { $round: ["$avgPrice", 2] }, // Round to 2 decimals
+//           priceRange: 1,
+//           totalRevenue: 1,
+//           popularLocations: 1
+//         }
+//       },
+//       {
+//         $sort: { avgPrice: 1 } // Sort by average price ascending
+//       }
+//     ]);
+
+//     res.status(200).json({
+//       status: "success",
+//       results: stats.length,
+//       data: { stats }
+//     });
+//   } catch (err) {
+//     res.status(400).json({
+//       status: "fail",
+//       message: err.message
+//     });
+//   }
+// };
 
 export const getGeneralTourStats = async (req, res) => {
   try {
@@ -248,9 +279,9 @@ export const getGeneralTourStats = async (req, res) => {
               $group: {
                 _id: "$difficulty",
                 count: { $sum: 1 },
-                avgPrice: { $avg: "$price" }
-              }
-            }
+                avgPrice: { $avg: "$price" },
+              },
+            },
           ],
           priceStatistics: [
             {
@@ -258,9 +289,9 @@ export const getGeneralTourStats = async (req, res) => {
                 _id: null,
                 avgPrice: { $avg: "$price" },
                 minPrice: { $min: "$price" },
-                maxPrice: { $max: "$price" }
-              }
-            }
+                maxPrice: { $max: "$price" },
+              },
+            },
           ],
           ratingStatistics: [
             {
@@ -268,12 +299,12 @@ export const getGeneralTourStats = async (req, res) => {
                 _id: null,
                 avgRating: { $avg: "$ratingsAverage" },
                 minRating: { $min: "$ratingsAverage" },
-                maxRating: { $max: "$ratingsAverage" }
-              }
-            }
-          ]
-        }
-      }
+                maxRating: { $max: "$ratingsAverage" },
+              },
+            },
+          ],
+        },
+      },
     ]);
 
     res.status(200).json({
@@ -282,8 +313,8 @@ export const getGeneralTourStats = async (req, res) => {
         totalTours: stats[0].totalTours[0]?.count || 0,
         toursByDifficulty: stats[0].toursByDifficulty,
         priceStats: stats[0].priceStatistics[0] || {},
-        ratingStats: stats[0].ratingStatistics[0] || {}
-      }
+        ratingStats: stats[0].ratingStatistics[0] || {},
+      },
     });
   } catch (err) {
     res.status(400).json({ status: "fail", message: err.message });
@@ -293,88 +324,89 @@ export const getGeneralTourStats = async (req, res) => {
 export const getMonthlyPlan = async (req, res) => {
   try {
     const year = req.params.year * 1; // 2024
-    
+
     const plan = await Tour.aggregate([
       {
-        $unwind: "$startDates"
+        $unwind: "$startDates",
       },
       {
         $match: {
           startDates: {
             $gte: new Date(`${year}-01-01`),
-            $lte: new Date(`${year}-12-31`)
-          }
-        }
+            $lte: new Date(`${year}-12-31`),
+          },
+        },
       },
       {
         $group: {
           _id: { $month: "$startDates" },
           numTourStarts: { $sum: 1 },
           tours: { $push: "$name" },
-          avgGroupSize: { $avg: "$maxGroupSize" }
-        }
+          avgGroupSize: { $avg: "$maxGroupSize" },
+        },
       },
       {
-        $addFields: { month: "$_id" }
+        $addFields: { month: "$_id" },
       },
       {
         $project: {
-          _id: 0
-        }
+          _id: 0,
+        },
       },
       {
-        $sort: { month: 1 }
-      }
+        $sort: { month: 1 },
+      },
     ]);
 
     res.status(200).json({
       status: "success",
       data: {
         year,
-        monthlyStats: plan
-      }
+        monthlyStats: plan,
+      },
     });
   } catch (err) {
     res.status(400).json({
       status: "fail",
-      message: err.message
+      message: err.message,
     });
   }
 };
-
 
 // Add these to your tour.controller.js file
 
 export const getToursWithin = async (req, res) => {
   try {
     const { distance, latlng, unit } = req.params;
-    const [lat, lng] = latlng.split(',');
+    const [lat, lng] = latlng.split(",");
 
     if (!lat || !lng) {
-      throw new Error('Please provide latitude and longitude in the format lat,lng');
+      throw new Error(
+        "Please provide latitude and longitude in the format lat,lng"
+      );
     }
 
-    const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+    const radius = unit === "mi" ? distance / 3963.2 : distance / 6378.1;
 
     const tours = await Tour.find({
       startLocation: {
         $geoWithin: {
-          $centerSphere: [[lng, lat], radius]
-        }
-      }
+          $centerSphere: [[lng, lat], radius],
+        },
+      },
     });
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       results: tours.length,
       data: {
-        data: tours
-      }
+        data: tours,
+      },
     });
   } catch (err) {
     res.status(400).json({
-      status: 'fail',
-      message: err.message
+      status: "fail",
+      message: err.message,
     });
   }
 };
@@ -382,50 +414,50 @@ export const getToursWithin = async (req, res) => {
 export const getDistances = async (req, res) => {
   try {
     const { latlng, unit } = req.params;
-    const [lat, lng] = latlng.split(',');
+    const [lat, lng] = latlng.split(",");
 
     if (!lat || !lng) {
-      throw new Error('Please provide latitude and longitude in the format lat,lng');
+      throw new Error(
+        "Please provide latitude and longitude in the format lat,lng"
+      );
     }
 
-    const multiplier = unit === 'mi' ? 0.000621371 : 0.001;
+    const multiplier = unit === "mi" ? 0.000621371 : 0.001;
 
     const distances = await Tour.aggregate([
       {
         $geoNear: {
           near: {
-            type: 'Point',
-            coordinates: [lng * 1, lat * 1]
+            type: "Point",
+            coordinates: [lng * 1, lat * 1],
           },
-          distanceField: 'distance',
-          distanceMultiplier: multiplier
-        }
+          distanceField: "distance",
+          distanceMultiplier: multiplier,
+        },
       },
       {
         $project: {
           distance: 1,
           name: 1,
           duration: 1,
-          difficulty: 1
-        }
-      }
+          difficulty: 1,
+        },
+      },
     ]);
 
     res.status(200).json({
-      status: 'success',
+      status: "success",
       data: {
-        data: distances
-      }
+        data: distances,
+      },
     });
   } catch (err) {
     res.status(400).json({
-      status: 'fail',
-      message: err.message
+      status: "fail",
+      message: err.message,
     });
   }
 };
-
-
 
 // import fs from "fs";
 
