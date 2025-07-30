@@ -206,120 +206,6 @@ export const getTourStats = async (req, res) => {
   }
 };
 
-// export const getTourStats = async (req, res) => {
-//   try {
-//     const stats = await Tour.aggregate([
-//       {
-//         $match: { ratingsAverage: { $gte: 4.5 } } // Filter high-rated tours
-//       },
-//       {
-//         $group: {
-//           _id: "$difficulty",
-//           numTours: { $sum: 1 },
-//           numRatings: { $sum: "$ratingsQuantity" },
-//           avgRating: { $avg: "$ratingsAverage" },
-//           avgPrice: { $avg: "$price" },
-//           minPrice: { $min: "$price" },
-//           maxPrice: { $max: "$price" },
-//           totalRevenue: { $sum: { $multiply: ["$price", "$maxGroupSize"] } },
-//           popularLocations: { $addToSet: "$startLocation.description" }
-//         }
-//       },
-//       {
-//         $addFields: {
-//           difficulty: "$_id", // Add a more readable field name
-//           priceRange: { // Create a price range string
-//             $concat: [
-//               { $toString: "$minPrice" },
-//               " - ",
-//               { $toString: "$maxPrice" }
-//             ]
-//           }
-//         }
-//       },
-//       {
-//         $project: {
-//           _id: 0, // Remove the _id field
-//           difficulty: 1,
-//           numTours: 1,
-//           numRatings: 1,
-//           avgRating: { $round: ["$avgRating", 1] }, // Round to 1 decimal
-//           avgPrice: { $round: ["$avgPrice", 2] }, // Round to 2 decimals
-//           priceRange: 1,
-//           totalRevenue: 1,
-//           popularLocations: 1
-//         }
-//       },
-//       {
-//         $sort: { avgPrice: 1 } // Sort by average price ascending
-//       }
-//     ]);
-
-//     res.status(200).json({
-//       status: "success",
-//       results: stats.length,
-//       data: { stats }
-//     });
-//   } catch (err) {
-//     res.status(400).json({
-//       status: "fail",
-//       message: err.message
-//     });
-//   }
-// };
-
-export const getGeneralTourStats = async (req, res) => {
-  try {
-    const stats = await Tour.aggregate([
-      {
-        $facet: {
-          totalTours: [{ $count: "count" }],
-          toursByDifficulty: [
-            {
-              $group: {
-                _id: "$difficulty",
-                count: { $sum: 1 },
-                avgPrice: { $avg: "$price" },
-              },
-            },
-          ],
-          priceStatistics: [
-            {
-              $group: {
-                _id: null,
-                avgPrice: { $avg: "$price" },
-                minPrice: { $min: "$price" },
-                maxPrice: { $max: "$price" },
-              },
-            },
-          ],
-          ratingStatistics: [
-            {
-              $group: {
-                _id: null,
-                avgRating: { $avg: "$ratingsAverage" },
-                minRating: { $min: "$ratingsAverage" },
-                maxRating: { $max: "$ratingsAverage" },
-              },
-            },
-          ],
-        },
-      },
-    ]);
-
-    res.status(200).json({
-      status: "success",
-      data: {
-        totalTours: stats[0].totalTours[0]?.count || 0,
-        toursByDifficulty: stats[0].toursByDifficulty,
-        priceStats: stats[0].priceStatistics[0] || {},
-        ratingStats: stats[0].ratingStatistics[0] || {},
-      },
-    });
-  } catch (err) {
-    res.status(400).json({ status: "fail", message: err.message });
-  }
-};
 
 export const getMonthlyPlan = async (req, res) => {
   try {
@@ -342,7 +228,7 @@ export const getMonthlyPlan = async (req, res) => {
           _id: { $month: "$startDates" },
           numTourStarts: { $sum: 1 },
           tours: { $push: "$name" },
-          avgGroupSize: { $avg: "$maxGroupSize" },
+          // avgGroupSize: { $avg: "$maxGroupSize" },
         },
       },
       {
@@ -354,7 +240,7 @@ export const getMonthlyPlan = async (req, res) => {
         },
       },
       {
-        $sort: { month: 1 },
+        $sort: { numTourStarts: -1 },
       },
     ]);
 
