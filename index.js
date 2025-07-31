@@ -26,18 +26,34 @@ await connectDB();
 
 const port = process.env.PORT || 8000;
 
-app.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
-});
+
 
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
 });
 
+
+
+
 app.use("/api/v1/tours", tourRouter);
 app.use("/api/v1/users", userRouter);
 
+
+
+// 404 error handler for invalid routes
+app.all(/\/*/, (req, res) => {  // <-- This is the safe alternative
+  res.status(404).json({
+    status: 'fail',
+    message: `Can't find ${req.originalUrl} on this server!`
+  });
+});
+
+
+app.listen(port, () => {
+  console.log(`Server is listening on port ${port}`);
+});
+
 export default app;
 
-//Test
+

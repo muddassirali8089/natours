@@ -1,4 +1,4 @@
-import express from 'express';
+import express from "express";
 import {
   getAllTours,
   getTour,
@@ -8,33 +8,23 @@ import {
   aliasTopTours,
   getTourStats,
   getMonthlyPlan,
- 
-} from '../controllers/tour.controller.js';
+} from "../controllers/tour.controller.js";
 
 const router = express.Router();
 
-// Aliasing route for top 5 cheap tours
-router.route('/top-5-cheap')
-  .get(aliasTopTours, getAllTours);
+// Aliased route
+router.get("/top-5-cheap", aliasTopTours, getAllTours);
 
 // Stats routes
-router.route('/stats')
-  .get(getTourStats); // Detailed stats by difficulty
-
-
-router.route('/monthly-plan/:year')
-  .get(getMonthlyPlan); // Monthly stats for a given year
-
-
+router.get("/stats", getTourStats);
+router.get("/monthly-plan/:year", getMonthlyPlan);
 
 // RESTful routes
-router.route('/')
-  .get(getAllTours)
-  .post(createTour);
+router.get("/", getAllTours);
+router.post("/", createTour);
 
-router.route('/:id')
-  .get(getTour)
-  .patch(updateTour)
-  .delete(deleteTour);
+router.get("/:id", getTour);
+router.patch("/:id", updateTour);
+router.delete("/:id", deleteTour);
 
 export default router;

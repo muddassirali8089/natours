@@ -22,34 +22,27 @@ export const createTour = async (req, res) => {
   }
 };
 
-// export const aliasTopTours = (req, res, next) => {
-//   req.queryOptions = {
-//     limit: "5",
-//     sort: "-ratingsAverage,price",
-//     fields: "name,price,ratingsAverage,summary,difficulty",
-//   };
-
-  
-
-//   next();
-// };
-
 export const aliasTopTours = (req, res, next) => {
-  req.query.limit = '5';
-  req.query.sort = '-ratingsAverage,price';
-  req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
+  req.queryOptions = {
+    limit: "5",
+    sort: "-ratingsAverage,price",
+    fields: "name,price,ratingsAverage,summary,difficulty,duration",
+  };
+
+  console.log("✅ aliasTopTours middleware executed");
+  console.log("✅ req.queryOptions:", req.queryOptions);
 
   next();
 };
 
-
 // utils/apiFeatures.js
 
 export const getAllTours = async (req, res) => {
-  const rawQuery =  req.query;
+  
+  const rawQuery = req.queryOptions || req.query;
 
   try {
-    const features = new APIFeatures(Tour.find(), req.query)
+    const features = new APIFeatures(Tour.find(), rawQuery)
       .filter()
       .sort()
       .limitFields()
@@ -71,6 +64,52 @@ export const getAllTours = async (req, res) => {
     });
   }
 
+  // Parse and nest filters using qs
+  // let queryStr = qs.stringify(rawQuery);
+  // const formattedQuery = qs.parse(queryStr);
+
+  // console.log("✅ Formatted query (qs):", formattedQuery);
+
+  // ❌ Remove special params before querying MongoDB
+  // const excludedFields = ["page", "sort", "limit", "fields"];
+  // excludedFields.forEach((field) => delete formattedQuery[field]);
+
+  // // 🔄 Convert to MongoDB query with operators like $gte
+  // queryStr = JSON.stringify(formattedQuery);
+  // queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+  // const queryObj = JSON.parse(queryStr);
+  // console.log("✅ Final MongoDB Query:", queryObj);
+
+  // 🔍 Execute query
+  // let query = Tour.find(queryObj);
+
+  // ✅ Apply Sorting
+  // if (typeof rawQuery.sort === "string") {
+  //   const sortBy = rawQuery.sort.split(",").join(" ");
+  //   query = query.sort(sortBy);
+  // } else {
+  //   query = query.sort("-createdAt");
+  // }
+
+  // ✅ Apply Field Limiting
+  // if (typeof rawQuery.fields === "string") {
+  //   const fields = rawQuery.fields.split(",").join(" ");
+  //   query = query.select(fields);
+  // } else {
+  //   query = query.select("-__v");
+  // }
+
+  // ✅ Pagination Logic
+  // const page = parseInt(rawQuery.page) || 1;
+  // const limit = parseInt(rawQuery.limit) || 100;
+  // const skip = (page - 1) * limit;
+  // query = query.skip(skip).limit(limit);
+
+  // // Optional: Page existence check
+  // const total = await Tour.countDocuments(query);
+  // if (skip >= total) throw new Error("This page does not exist");
+
+  // 🟢 Execute Final Query
 };
 
 export const getTour = async (req, res) => {
@@ -94,9 +133,6 @@ export const getTour = async (req, res) => {
 };
 
 export const updateTour = async (req, res) => {
-
-  console.log("call");
-  
   try {
     const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
