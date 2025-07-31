@@ -7,7 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon index.js",
-    "dev": "cross-env NODE_ENV=production nodemon index.js"
+    "dev": "cross-env NODE_ENV=production nodemon index.js",
+    "debug":"ndb index.js"
   },
   "repository": {
     "type": "git",
