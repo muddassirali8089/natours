@@ -42,13 +42,32 @@ app.use("/api/v1/users", userRouter);
 
 
 // 404 error handler for invalid routes
-app.all(/\/*/, (req, res) => {  // <-- This is the safe alternative
-  res.status(404).json({
-    status: 'fail',
-    message: `Can't find ${req.originalUrl} on this server!`
-  });
+app.all(/\/*/, (req, res , next) => { 
+  const err = new Error(`Can't find ${req.originalUrl} on this server!`);
+  
+  err.statusCode = 404;
+  err.status = "fail";
+
+  next(err)
+  // <-- This is the safe alternative
+  // res.status(404).json({
+  //   status: 'fail',
+  //   message: `Can't find ${req.originalUrl} on this server!`
+  // });
 });
 
+
+app.use((err , req, res,next) => {
+
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || "error";
+
+  res.status(err.statusCode).json({
+    status: err.status,
+    message: err.message
+
+  })
+})
 
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
