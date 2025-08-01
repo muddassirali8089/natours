@@ -4,9 +4,13 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import AppError from "./utils/AppError.js";
+
 import tourRouter from "./routes/tour.routes.js";
 import userRouter from "./routes/user.routes.js";
 import connectDB from "./connection/connectDB.js";
+
+import globalErrorHandler from "./controllers/globalErrorHandler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,10 +47,12 @@ app.use("/api/v1/users", userRouter);
 
 // 404 error handler for invalid routes
 app.all(/\/*/, (req, res , next) => { 
-  const err = new Error(`Can't find ${req.originalUrl} on this server!`);
+
+  const err = new AppError(`Can't find ${req.originalUrl} on this server!`, 404)
+  // const err = new Error(`Can't find ${req.originalUrl} on this server!`);
   
-  err.statusCode = 404;
-  err.status = "fail";
+  // err.statusCode = 404;
+  // err.status = "fail";
 
   next(err)
   // <-- This is the safe alternative
@@ -57,17 +63,7 @@ app.all(/\/*/, (req, res , next) => {
 });
 
 
-app.use((err , req, res,next) => {
-
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || "error";
-
-  res.status(err.statusCode).json({
-    status: err.status,
-    message: err.message
-
-  })
-})
+app.use(globalErrorHandler)
 
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
