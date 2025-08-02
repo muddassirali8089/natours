@@ -21,10 +21,13 @@ const app = express();
 app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
 
+let address="localhost"
+
 // ✅ Only use morgan in development
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+
 
 await connectDB();
 
@@ -47,21 +50,11 @@ app.use("/api/v1/users", userRouter);
 
 // 404 error handler for invalid routes
 app.all(/\/*/, (req, res , next) => { 
-
-  const err = new AppError(`Can't find ${req.originalUrl} on this server!`, 404)
-  // const err = new Error(`Can't find ${req.originalUrl} on this server!`);
   
-  // err.statusCode = 404;
-  // err.status = "fail";
-
+  const err = new AppError(`Can't find ${req.originalUrl} on this server!`, 404)  
   next(err)
-  // <-- This is the safe alternative
-  // res.status(404).json({
-  //   status: 'fail',
-  //   message: `Can't find ${req.originalUrl} on this server!`
-  // });
-});
 
+});
 
 app.use(globalErrorHandler)
 

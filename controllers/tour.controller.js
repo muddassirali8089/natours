@@ -2,6 +2,14 @@ import Tour from "../models/tour.model.js";
 import qs from "qs";
 import { APIFeatures } from "../utils/apiFeatures.js";
 import catchAsync from "./catchAsync.js";
+import AppError from "../utils/AppError.js";
+
+
+
+/////////////////////////////////-----CREATE TOUR----/////////////////////////////////////////////
+
+
+
 
 export const createTour = catchAsync(async (req, res, next) => {
   const newTour = await Tour.create(req.body);
@@ -12,7 +20,15 @@ export const createTour = catchAsync(async (req, res, next) => {
       tour: newTour,
     },
   });
+
+
+
 });
+
+
+
+///////////////////////////////---IT RETURNS BEST TOUR---////////////////////////////////////////
+
 
 export const aliasTopTours = catchAsync(async (req, res, next) => {
   req.queryOptions = {
@@ -27,7 +43,10 @@ export const aliasTopTours = catchAsync(async (req, res, next) => {
   next();
 });
 
-// utils/apiFeatures.js
+
+
+
+//////////////////////////////----- GET ALL TOOURS-------///////////////////////////////////////
 
 export const getAllTours = catchAsync(async (req, res, next) => {
   const rawQuery = req.queryOptions || req.query;
@@ -52,6 +71,11 @@ export const getAllTours = catchAsync(async (req, res, next) => {
   });
 });
 
+
+
+//////////////////////////////----- GET TOOUR BY ID -------///////////////////////////////////////
+
+
 export const getTour = catchAsync(async (req, res, next) => {
   const tour = await Tour.findById(req.params.id);
 
@@ -66,6 +90,8 @@ export const getTour = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+//////////////////////////////----- UPDATE TOUR -------///////////////////////////////////////
 
 export const updateTour = catchAsync(async (req, res, next) => {
   const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
@@ -85,6 +111,10 @@ export const updateTour = catchAsync(async (req, res, next) => {
   });
 });
 
+
+
+//////////////////////////////----- DELETE TOUR -------///////////////////////////////////////
+
 export const deleteTour = catchAsync(async (req, res, next) => {
   const tour = await Tour.findByIdAndDelete(req.params.id);
 
@@ -97,6 +127,8 @@ export const deleteTour = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
+//////////////////////////////----- GET TOOUR STATS-------///////////////////////////////////////
 
 export const getTourStats = catchAsync(async (req, res, next) => {
   const stats = await Tour.aggregate([
@@ -129,6 +161,7 @@ export const getTourStats = catchAsync(async (req, res, next) => {
   });
 });
 
+//////////////////////////////----- GET MONTHLY PLAN -------///////////////////////////////////////
 
 
 export const getMonthlyPlan = catchAsync(async (req, res, next) => {
@@ -174,6 +207,40 @@ export const getMonthlyPlan = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+
+
+
+/////////////////////////////////////// END /////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Add these to your tour.controller.js file
