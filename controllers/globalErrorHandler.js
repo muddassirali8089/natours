@@ -1,4 +1,4 @@
-import AppError from '../utils/appError.js'; // Your custom error class
+import AppError from '../utils/AppError.js'; 
 
 // Handle Mongoose CastError (e.g. invalid _id)
 const handleCastErrorDB = (err) => {
