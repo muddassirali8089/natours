@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import validator from 'validator';
+import bcrypt from 'bcryptjs'; // ✅ import bcryptjs
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -28,6 +29,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please confirm your password'],
     validate: {
+      // Only works on SAVE and CREATE
       validator: function (el) {
         return el === this.password;
       },
@@ -36,7 +38,15 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-userSchema.pre('save', function (next) {
+// ✅ PRE-SAVE MIDDLEWARE to hash password
+userSchema.pre('save', async function (next) {
+  // Only hash the password if it's been modified or is new
+  if (!this.isModified('password')) return next();
+
+  // Hash the password with cost of 12 (salt rounds)
+  this.password = await bcrypt.hash(this.password, 12);
+
+  // Remove confirmPassword (won't be saved in DB)
   this.confirmPassword = undefined;
   next();
 });

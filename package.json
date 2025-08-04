@@ -8,7 +8,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "nodemon index.js",
     "prod": "cross-env NODE_ENV=production node index.js",
-    
     "debug": "ndb index.js"
   },
   "repository": {
@@ -22,6 +21,7 @@
   },
   "homepage": "https://github.com/muddassirali8089/natours#readme",
   "dependencies": {
+    "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "mongoose": "^8.16.3",
