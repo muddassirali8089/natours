@@ -1,12 +1,14 @@
 import express from "express"
-import { createUser } from "../controllers/authContrller.js";
+import { signup, login ,  } from "../controllers/authContrller.js";
+import {getAllUsers} from "../controllers/user.controller.js"
 
 
 const router = express.Router();
 
+router.get("/" , getAllUsers);
+router.post("/signup" , signup)
+router.post("/login", login)
 
-router.post("/signup" , createUser)
-// router.get("/" , getAllUsers);
 
 // router.post("/" , createUser);
 // router.get("/:id" , getUser)
