@@ -2,14 +2,15 @@
 import User from '../models/user.model.js'; // adjust path as needed
 import catchAsync from '../controllers/catchAsync.js';
 import AppError from '../utils/AppError.js';
+import jwt from "jsonwebtoken";
 import { promisify } from "util";
 import { signToken } from '../utils/jwt.js';
 
 
 export const signup = catchAsync(async (req, res, next) => {
-  const { name, email, password, confirmPassword } = req.body;
+  const { name, email, password, confirmPassword , passwordChangedAt } = req.body;
 
-  const newUser = await User.create({ name, email, password, confirmPassword });
+  const newUser = await User.create({ name, email, password, confirmPassword , passwordChangedAt });
 
 
   const token = signToken(newUser._id);

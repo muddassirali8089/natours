@@ -10,6 +10,8 @@ import {
   getMonthlyPlan,
 } from "../controllers/tour.controller.js";
 
+import { protect } from "../controllers/authContrller.js";
+
 const router = express.Router();
 
 // Aliased route
@@ -20,7 +22,7 @@ router.get("/stats", getTourStats);
 router.get("/monthly-plan/:year", getMonthlyPlan);
 
 // RESTful routes
-router.get("/", getAllTours);
+router.get("/", protect,getAllTours);
 router.post("/", createTour);
 
 router.get("/:id", getTour);

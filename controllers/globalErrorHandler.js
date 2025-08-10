@@ -21,9 +21,13 @@ const handleDuplicateFieldsDB = (err) => {
 };
 
 
-const handleInvalidUserToken = () => {
-  return new AppError('This token does not belong to any valid user. Please log in again.', 401);
+const handleJwtError = () => {
+  return new AppError('Invalid Token. Please Login again!', 401);
 };
+
+const TokenExpiredError = () =>{
+  return new AppError("your token has expired. Please Login again!" , 401);
+}
 
 const sendErrorDev = (err, res) => {
   res.status(err.statusCode).json({
@@ -63,7 +67,8 @@ const globalErrorHandler = (err, req, res, next) => {
     if (err.name === 'CastError') error = handleCastErrorDB(err);
     if (err.name === 'ValidationError') error = handleValidationErrorDB(err);
     if (err.code === 11000) error = handleDuplicateFieldsDB(err);
-    if (err.name === 'InvalidUserTokenError') error = handleInvalidUserToken();
+    if (err.name === 'JsonWebTokenError') error = handleJwtError();
+    if(err.name === "TokenExpiredError") error = TokenExpiredError();
 
     sendErrorProd(error, res);
   }
