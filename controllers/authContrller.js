@@ -8,9 +8,9 @@ import { signToken } from '../utils/jwt.js';
 
 
 export const signup = catchAsync(async (req, res, next) => {
-  const { name, email, password, confirmPassword , passwordChangedAt } = req.body;
+  const { name, email, password, confirmPassword  } = req.body;
 
-  const newUser = await User.create({ name, email, password, confirmPassword , passwordChangedAt });
+  const newUser = await User.create({ name, email, password, confirmPassword });
 
 
   const token = signToken(newUser._id);
