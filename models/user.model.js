@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema({
     required: [true, "User must have a name"],
     trim: true,
   },
+  roles: {
+  type: [String],
+  enum: ['user', 'admin', 'lead-guide', 'guide'],
+  default: ['user']
+},
   email: {
     type: String,
     required: [true, "User must have an email"],
@@ -17,7 +22,7 @@ const userSchema = new mongoose.Schema({
   },
   photo: {
     type: String,
-    default: "default.jpg",
+    
   },
   password: {
     type: String,

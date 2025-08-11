@@ -8,9 +8,9 @@ import { signToken } from '../utils/jwt.js';
 
 
 export const signup = catchAsync(async (req, res, next) => {
-  const { name, email, password, confirmPassword  } = req.body;
+  // const { name, email, password, confirmPassword  } = req.body;
 
-  const newUser = await User.create({ name, email, password, confirmPassword });
+  const newUser = await User.create(req.body);
 
 
   const token = signToken(newUser._id);
@@ -66,6 +66,8 @@ export const protect = catchAsync(async (req, res, next) => {
   ) {
     token = req.headers.authorization.split(" ")[1];
   }
+ 
+  
 
   if (!token) {
     return next(
@@ -95,3 +97,66 @@ export const protect = catchAsync(async (req, res, next) => {
   req.user = currentUser;
   next();
 });
+
+
+export const restrictTo = (...requiredRoles) => {
+  return (req, res, next) => {
+    // Debug: Log user and required roles
+    console.log('\n--- ROLE VERIFICATION DEBUG ---');
+    console.log('User:', req.user?.email || 'Unknown user');
+    console.log('User Roles:', req.user?.roles || 'No roles found');
+    console.log('Required Roles:', requiredRoles);
+
+    // 1. Check if user exists and has roles
+    if (!req.user?.roles) {
+      console.error('ERROR: User or roles missing in request');
+      return next(
+        new AppError('Authentication required', 401)
+      );
+    }
+
+    // 2. Check role intersection (supports single role or array)
+    const userRoles = Array.isArray(req.user.roles) 
+      ? req.user.roles 
+      : [req.user.roles];
+    
+    const hasPermission = requiredRoles.some(role => 
+      userRoles.includes(role)
+    );
+
+    // Debug: Result
+    console.log('Permission Granted:', hasPermission ? '✅' : '❌');
+    console.log('-------------------------------\n');
+
+    // 3. Deny access if no match
+    if (!hasPermission) {
+      return next(
+        new AppError(
+          `Insufficient permissions. Required: ${requiredRoles.join(', ')}`,
+          403
+        )
+      );
+    }
+
+    next();
+  };
+};
+
+// export const restrictToAny = (...allowedRoles) => {
+//   return (req, res, next) => {
+//     const userRoles = req.user.roles || [];
+    
+//     const hasPermission = allowedRoles.some(role => 
+//       userRoles.includes(role)
+//     );
+
+//     if (!hasPermission) {
+//       return next(
+//         new AppError(`Requires one of: ${allowedRoles.join(', ')}`, 403)
+//       );
+//     }
+//     next();
+//   };
+// };
+
+

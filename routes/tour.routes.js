@@ -10,7 +10,7 @@ import {
   getMonthlyPlan,
 } from "../controllers/tour.controller.js";
 
-import { protect } from "../controllers/authContrller.js";
+import { protect  , restrictTo} from "../controllers/authContrller.js";
 
 const router = express.Router();
 
@@ -27,6 +27,6 @@ router.post("/", createTour);
 
 router.get("/:id", getTour);
 router.patch("/:id", updateTour);
-router.delete("/:id", deleteTour);
+router.delete("/:id", protect, restrictTo('admin' , 'lead-guide'),deleteTour);
 
 export default router;
