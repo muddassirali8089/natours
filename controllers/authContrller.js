@@ -214,6 +214,35 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   });
 });
 
+
+
+export const updateMyPassword = catchAsync(async (req, res, next) => {
+  // 1. Get user from DB with password
+  const user = await User.findById(req.user.id).select("+password");
+
+  // 2. Check if current password is correct
+  const isCorrect = await bcrypt.compare(req.body.currentPassword, user.password);
+  if (!isCorrect) {
+    return next(new AppError("Your current password is wrong", 401));
+  }
+
+  // 3. Set new password
+  user.password = req.body.newPassword;
+  user.confirmPassword = req.body.confirmPassword;
+  await user.save(); // triggers password hashing middleware
+
+  // 4. Sign new JWT and send
+    const token = signToken(user._id);
+
+  res.status(200).json({
+    status: "success",
+    token,
+  });
+});
+
+
+
+
 // export const restrictToAny = (...allowedRoles) => {
 //   return (req, res, next) => {
 //     const userRoles = req.user.roles || [];
