@@ -2,6 +2,15 @@ import User from '../models/user.model.js';
 import catchAsync from './catchAsync.js';
 import AppError from '../utils/AppError.js';
 
+
+export const filterObj = (obj, ...allowedFields) => {
+  const newObj = {};
+  Object.keys(obj).forEach(el => {
+    if (allowedFields.includes(el)) newObj[el] = obj[el];
+  });
+  return newObj;
+};
+
 export const getAllUsers = catchAsync(async (req, res, next) => {
   const users = await User.find();
 
@@ -23,17 +32,15 @@ export const updateMe = catchAsync(async (req, res, next) => {
   // 1. Block password updates here
   if (req.body.password || req.body.confirmPassword) {
     return next(
-      new AppError(
-        "This route is not for password updates. Please use /updateMyPassword",
-        400
-      )
+      new AppError("This route is not for password updates. Please use /updateMyPassword", 400)
     );
   }
 
-  // 2. Update the user (whatever fields they pass, except password)
- 
-  
-  const updatedUser = await User.findByIdAndUpdate(req.user.id, req.body, {
+  // 2. Filter body to allow only name & email
+  const filteredBody = filterObj(req.body, "name", "email");
+
+  // 3. Update user document
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
     runValidators: true
   });
