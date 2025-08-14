@@ -45,6 +45,12 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
+
+  active: {
+    type: Boolean,
+    default: true,
+    select: false
+  }
 });
 
 // ✅ PRE-SAVE MIDDLEWARE to hash password
@@ -57,6 +63,14 @@ userSchema.pre("save", async function (next) {
 
   // Remove confirmPassword (won't be saved in DB)
   this.confirmPassword = undefined;
+  next();
+});
+
+
+
+userSchema.pre(/^find/, function (next) {
+  // Exclude inactive users from any find query
+  this.find({ active: { $ne: false } });
   next();
 });
 
