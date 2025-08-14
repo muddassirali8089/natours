@@ -1,61 +1,54 @@
-
-import User from '../models/user.model.js'; // adjust path as needed
-import catchAsync from '../controllers/catchAsync.js';
-import AppError from '../utils/AppError.js';
+import User from "../models/user.model.js"; // adjust path as needed
+import catchAsync from "../controllers/catchAsync.js";
+import AppError from "../utils/AppError.js";
 import jwt from "jsonwebtoken";
 import { promisify } from "util";
-import { signToken } from '../utils/jwt.js';
-import {sendEmail} from "../utils/email.js";
+import { sendEmail } from "../utils/email.js";
 import crypto from "crypto";
+import {signToken} from "../utils/jwt.js"
+
+
+export const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+
+  res.status(statusCode).json({
+    status: "success",
+    token,
+    data: {
+      user,
+    },
+  });
+};
+
 
 export const signup = catchAsync(async (req, res, next) => {
   // const { name, email, password, confirmPassword  } = req.body;
 
   const newUser = await User.create(req.body);
 
-
-  const token = signToken(newUser._id);
-
-  res.status(201).json({
-    status: 'success',
-    token,
-    data: {
-      user: newUser
-    }
-  });
+  createSendToken(newUser, 201, res);
 });
-
-
 
 export const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
   // 1) Check if email and password exist
   if (!email || !password) {
-    return next(new AppError('Please provide email and password!', 400));
+    return next(new AppError("Please provide email and password!", 400));
   }
 
   // 2) Check if user exists && password is correct
-  const user = await User.findOne({ email }).select('+password');
-  const isCorrect = user && await user.correctPassword(password, user.password);
+  const user = await User.findOne({ email }).select("+password");
+  const isCorrect =
+    user && (await user.correctPassword(password, user.password));
 
   if (!user || !isCorrect) {
-    return next(new AppError('Incorrect email or password', 401));
+    return next(new AppError("Incorrect email or password", 401));
   }
 
   // 3) If everything ok, send token to client
-  const token = signToken(user._id);
-
-  res.status(200).json({
-    status: 'success',
-    token,
-    data: {
-      user,
-    },
-  });
+  createSendToken(user, 200, res);
 });
-
-
 
 export const protect = catchAsync(async (req, res, next) => {
   let token;
@@ -67,8 +60,7 @@ export const protect = catchAsync(async (req, res, next) => {
   ) {
     token = req.headers.authorization.split(" ")[1];
   }
- 
-  
+
   if (!token) {
     return next(
       new AppError("You are not logged in! Please log in to get access.", 401)
@@ -98,41 +90,38 @@ export const protect = catchAsync(async (req, res, next) => {
   next();
 });
 
-
 export const restrictTo = (...requiredRoles) => {
   return (req, res, next) => {
     // Debug: Log user and required roles
-    console.log('\n--- ROLE VERIFICATION DEBUG ---');
-    console.log('User:', req.user?.email || 'Unknown user');
-    console.log('User Roles:', req.user?.roles || 'No roles found');
-    console.log('Required Roles:', requiredRoles);
+    console.log("\n--- ROLE VERIFICATION DEBUG ---");
+    console.log("User:", req.user?.email || "Unknown user");
+    console.log("User Roles:", req.user?.roles || "No roles found");
+    console.log("Required Roles:", requiredRoles);
 
     // 1. Check if user exists and has roles
     if (!req.user?.roles) {
-      console.error('ERROR: User or roles missing in request');
-      return next(
-        new AppError('Authentication required', 401)
-      );
+      console.error("ERROR: User or roles missing in request");
+      return next(new AppError("Authentication required", 401));
     }
 
     // 2. Check role intersection (supports single role or array)
-    const userRoles = Array.isArray(req.user.roles) 
-      ? req.user.roles 
+    const userRoles = Array.isArray(req.user.roles)
+      ? req.user.roles
       : [req.user.roles];
-    
-    const hasPermission = requiredRoles.some(role => 
+
+    const hasPermission = requiredRoles.some((role) =>
       userRoles.includes(role)
     );
 
     // Debug: Result
-    console.log('Permission Granted:', hasPermission ? '✅' : '❌');
-    console.log('-------------------------------\n');
+    console.log("Permission Granted:", hasPermission ? "✅" : "❌");
+    console.log("-------------------------------\n");
 
     // 3. Deny access if no match
     if (!hasPermission) {
       return next(
         new AppError(
-          `Insufficient permissions. Required: ${requiredRoles.join(', ')}`,
+          `Insufficient permissions. Required: ${requiredRoles.join(", ")}`,
           403
         )
       );
@@ -141,9 +130,6 @@ export const restrictTo = (...requiredRoles) => {
     next();
   };
 };
-
-
-
 
 export const forgotPassword = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
@@ -154,7 +140,9 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetURL = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetToken}`;
+  const resetURL = `${req.protocol}://${req.get(
+    "host"
+  )}/api/v1/users/resetPassword/${resetToken}`;
   const message = `Forgot your password? Submit a PATCH request with your new password and confirmPassword to: ${resetURL}\nIf you didn't request this, ignore this email.`;
 
   try {
@@ -173,10 +161,14 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
     user.passwordResetExpires = undefined;
     await user.save({ validateBeforeSave: false });
 
-    return next(new AppError("There was an error sending the email. Try again later!", 500));
+    return next(
+      new AppError(
+        "There was an error sending the email. Try again later!",
+        500
+      )
+    );
   }
 });
-
 
 export const resetPassword = catchAsync(async (req, res, next) => {
   // 1. Hash token from URL
@@ -204,24 +196,20 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   // 4. Log in the user with new JWT
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
 
-  res.status(200).json({
-    status: "success",
-    token,
-  });
+  createSendToken(user, 200, res);
 });
-
-
 
 export const updateMyPassword = catchAsync(async (req, res, next) => {
   // 1. Get user from DB with password
   const user = await User.findById(req.user.id).select("+password");
 
   // 2. Check if current password is correct
-  const isCorrect = await bcrypt.compare(req.body.currentPassword, user.password);
+  const isCorrect = await user.correctPassword(
+    req.body.currentPassword,
+    user.password
+  );
+
   if (!isCorrect) {
     return next(new AppError("Your current password is wrong", 401));
   }
@@ -232,22 +220,14 @@ export const updateMyPassword = catchAsync(async (req, res, next) => {
   await user.save(); // triggers password hashing middleware
 
   // 4. Sign new JWT and send
-    const token = signToken(user._id);
-
-  res.status(200).json({
-    status: "success",
-    token,
-  });
+  createSendToken(user, 200, res);
 });
-
-
-
 
 // export const restrictToAny = (...allowedRoles) => {
 //   return (req, res, next) => {
 //     const userRoles = req.user.roles || [];
-    
-//     const hasPermission = allowedRoles.some(role => 
+
+//     const hasPermission = allowedRoles.some(role =>
 //       userRoles.includes(role)
 //     );
 
@@ -259,5 +239,3 @@ export const updateMyPassword = catchAsync(async (req, res, next) => {
 //     next();
 //   };
 // };
-
-

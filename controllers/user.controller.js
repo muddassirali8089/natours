@@ -19,6 +19,35 @@ export const getAllUsers = catchAsync(async (req, res, next) => {
 });
 
 
+export const updateMe = catchAsync(async (req, res, next) => {
+  // 1. Block password updates here
+  if (req.body.password || req.body.confirmPassword) {
+    return next(
+      new AppError(
+        "This route is not for password updates. Please use /updateMyPassword",
+        400
+      )
+    );
+  }
+
+  // 2. Update the user (whatever fields they pass, except password)
+ 
+  
+  const updatedUser = await User.findByIdAndUpdate(req.user.id, req.body, {
+    new: true,
+    runValidators: true
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      user: updatedUser
+    }
+  });
+});
+
+
+
 export const getUser = (req, res) => {
   return res.status(500).json({
     status: "err",
