@@ -11,6 +11,21 @@ import {signToken} from "../utils/jwt.js"
 export const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
 
+  // Cookie options
+  const cookieOptions = {
+    expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days
+    httpOnly: true, // cookie can't be accessed via JS (XSS protection)
+    secure: process.env.NODE_ENV === "production", // send over HTTPS in production
+    sameSite: "strict", // CSRF protection
+  };
+
+  // Set cookie
+  res.cookie("jwt", token, cookieOptions);
+
+  // Remove password from output
+  user.password = undefined;
+
+  // Send response
   res.status(statusCode).json({
     status: "success",
     token,
@@ -19,6 +34,7 @@ export const createSendToken = (user, statusCode, res) => {
     },
   });
 };
+
 
 
 export const signup = catchAsync(async (req, res, next) => {

@@ -9,6 +9,7 @@ import tourRouter from "./routes/tour.routes.js";
 import userRouter from "./routes/user.routes.js";
 import connectDB from "./connection/connectDB.js";
 import globalErrorHandler from "./controllers/globalErrorHandler.js";
+import { generalLimiter, loginLimiter } from "./utils/rateLimiters.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +26,7 @@ const app = express();
 
 app.use(express.json());
 app.use(express.static(`${__dirname}/public`));
-
+app.use(generalLimiter);
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
