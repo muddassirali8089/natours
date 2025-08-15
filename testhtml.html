@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>XSS Test with Real API</title>
+</head>
+<body>
+  <div id="userName">Loading user data...</div>
+
+  <script>
+    async function getUser() {
+      try {
+        // 1. Make API call to your endpoint
+        const response = await fetch('http://localhost:8000/api/v1/users/689fa4a2ba70cff7aac256d0');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        // 2. Get JSON data
+        const data = await response.json();
+        console.log("API Response:", data);
+
+        // 3. Display raw name (safe)
+        document.getElementById('userName').textContent = 
+          `User: ${data.data.user.name}`;
+
+        // 4. ⚠️ UNSAFE: Try to execute XSS payload from API
+        // This will only work if the API returns executable code like:
+        // <img src='x' onerror='alert("Hacked")'>
+        document.getElementById('userName').innerHTML = data.data.user.name;
+
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('userName').textContent = 'Failed to load user';
+      }
+    }
+
+    // Run the function
+    getUser();
+  </script>
+</body>
+</html>

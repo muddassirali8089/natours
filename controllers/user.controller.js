@@ -65,12 +65,24 @@ export const deleteMe = async (req, res, next) => {
 
 
 
-export const getUser = (req, res) => {
-  return res.status(500).json({
-    status: "err",
-    message: "user is route is not define",
+export const getUser = catchAsync(async (req, res, next) => {
+  // Example: get the ID from params (or you can use req.user.id if logged in)
+  const userId = req.params.id;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    return next(new AppError('No user found with this ID', 404));
+  }
+
+  // Send user data back
+  res.status(200).json({
+    status: 'success',
+    data: {
+      user
+    }
   });
-};
+});
 
 
 export const createUser = (req, res) => {
