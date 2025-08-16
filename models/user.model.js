@@ -3,7 +3,6 @@ import validator from "validator";
 import bcrypt from "bcryptjs"; // ✅ import bcryptjs
 import crypto from "crypto";
 
-
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -46,11 +45,18 @@ const userSchema = new mongoose.Schema({
   passwordResetToken: String,
   passwordResetExpires: Date,
 
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationToken: String,
+  emailVerificationExpires: Date,
+
   active: {
     type: Boolean,
     default: true,
-    select: false
-  }
+    select: false,
+  },
 });
 
 // ✅ PRE-SAVE MIDDLEWARE to hash password
@@ -66,13 +72,24 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-
-
 userSchema.pre(/^find/, function (next) {
   // Exclude inactive users from any find query
   this.find({ active: { $ne: false } });
   next();
 });
+
+
+userSchema.methods.createEmailVerificationToken = function () {
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+
+  this.emailVerificationToken = crypto
+    .createHash("sha256")
+    .update(verificationToken)
+    .digest("hex");
+
+  this.emailVerificationExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  return verificationToken; // send this token in email
+};
 
 
 userSchema.methods.createPasswordResetToken = function () {
@@ -91,7 +108,6 @@ userSchema.methods.createPasswordResetToken = function () {
   // 4. Return plain token (email to user)
   return resetToken;
 };
-
 
 userSchema.pre("save", function (next) {
   // Only set when password is modified and NOT on new user creation
@@ -121,6 +137,41 @@ userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   }
   return false; // false means password not changed after JWT issued
 };
+
+
+userSchema.statics.handleSignup = async function (req, userData, sendVerificationEmail) {
+
+  const { email } = userData;
+
+  let user = await this.findOne({ email });
+
+  if (user) {
+    if (user.emailVerified) {
+      const err = new Error("Email already registered. Please login instead.");
+      err.statusCode = 400;
+      err.isOperational = true;
+      throw err;
+    }
+
+    const token = user.createEmailVerificationToken();
+    await user.save({ validateBeforeSave: false });
+
+    await sendVerificationEmail(req, user, token); // ✅ now user is defined
+    return { status: "pending", message: "Verification link resent" };
+  }
+
+  // Create new user
+  user = await this.create(userData);
+
+  const token = user.createEmailVerificationToken();
+  await user.save({ validateBeforeSave: false });
+
+  await sendVerificationEmail(req, user, token); // ✅ now user is defined
+  return { status: "new", message: "Verification email sent" };
+};
+
+
+
 
 const User = mongoose.model("User", userSchema);
 export default User;

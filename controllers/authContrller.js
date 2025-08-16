@@ -5,8 +5,10 @@ import jwt from "jsonwebtoken";
 import { promisify } from "util";
 import { sendEmail } from "../utils/email.js";
 import crypto from "crypto";
-import {signToken} from "../utils/jwt.js"
+import { signToken } from "../utils/jwt.js";
 
+import { sendVerificationEmail } from "../controllers/sendVerificationEmail.js";
+import { verifyEmail } from "../controllers/verifyEmail.js";
 
 export const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
@@ -34,16 +36,16 @@ export const createSendToken = (user, statusCode, res) => {
     },
   });
 };
-
-
-
 export const signup = catchAsync(async (req, res, next) => {
-  // const { name, email, password, confirmPassword  } = req.body;
+  const result = await User.handleSignup(req, req.body, sendVerificationEmail);
 
-  const newUser = await User.create(req.body);
-
-  createSendToken(newUser, 201, res);
+  res.status(result.status === "new" ? 201 : 200).json({
+    status: "success",
+    message: result.message,
+  });
 });
+
+
 
 export const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
@@ -54,7 +56,7 @@ export const login = catchAsync(async (req, res, next) => {
   }
 
   // 2) Check if user exists && password is correct
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email }).select("+password +isVerified");
   const isCorrect =
     user && (await user.correctPassword(password, user.password));
 
@@ -62,9 +64,59 @@ export const login = catchAsync(async (req, res, next) => {
     return next(new AppError("Incorrect email or password", 401));
   }
 
-  // 3) If everything ok, send token to client
+  // 3) Check if user is verified
+  if (!user.isVerified) {
+    // Generate a new token
+    const verificationToken = user.createEmailVerificationToken();
+    
+    await user.save({ validateBeforeSave: false });
+
+    // Send verification email
+    await sendVerificationEmail(req, user, verificationToken);
+
+    return next(
+      new AppError(
+        "Your account is not verified. A new verification email has been sent.",
+        403
+      )
+    );
+  }
+
+  // 4) If everything ok and verified, send token to client
   createSendToken(user, 200, res);
 });
+
+
+
+
+// export const signup = catchAsync(async (req, res, next) => {
+//   // const { name, email, password, confirmPassword  } = req.body;
+
+//   const newUser = await User.create(req.body);
+
+//   createSendToken(newUser, 201, res);
+// });
+
+// export const login = catchAsync(async (req, res, next) => {
+//   const { email, password } = req.body;
+
+//   // 1) Check if email and password exist
+//   if (!email || !password) {
+//     return next(new AppError("Please provide email and password!", 400));
+//   }
+
+//   // 2) Check if user exists && password is correct
+//   const user = await User.findOne({ email }).select("+password");
+//   const isCorrect =
+//     user && (await user.correctPassword(password, user.password));
+
+//   if (!user || !isCorrect) {
+//     return next(new AppError("Incorrect email or password", 401));
+//   }
+
+//   // 3) If everything ok, send token to client
+//   createSendToken(user, 200, res);
+// });
 
 export const protect = catchAsync(async (req, res, next) => {
   let token;

@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import helmet from "helmet";
 import path from "path";
 import cors from "cors";
+import hpp from "hpp";
 import { FilterXSS } from 'xss';
 import sanitize from 'mongo-sanitize';
 import { fileURLToPath } from "url";
@@ -32,6 +33,7 @@ app.use(helmet());
 app.use(cors())
 app.use(express.json({ limit: "10kb" }));
 
+
 app.use((req, res, next) => {
   ['body', 'query', 'params'].forEach(key => {
     if (req[key]) {
@@ -59,11 +61,14 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(generalLimiter);
 
-
+app.use(hpp({
+  whitelist: ['sort']
+}));
 
 app.use(express.static(`${__dirname}/public`));
-app.use(generalLimiter);
+
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }

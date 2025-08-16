@@ -8,8 +8,7 @@ export class APIFeatures {
   }
 
   filter() {
-    console.log("call the filter...");
-
+    
     const queryObj = { ...this.queryString };
     const excludedFields = ["page", "sort", "limit", "fields"];
     excludedFields.forEach((field) => delete queryObj[field]);
@@ -26,6 +25,7 @@ export class APIFeatures {
 
   sort() {
     if (typeof this.queryString.sort === "string") {
+      
       const sortBy = this.queryString.sort.split(",").join(" ");
       this.query = this.query.sort(sortBy);
     } else {
