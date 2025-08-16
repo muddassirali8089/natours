@@ -167,7 +167,7 @@ userSchema.statics.handleSignup = async function (req, userData, sendVerificatio
   await user.save({ validateBeforeSave: false });
 
   await sendVerificationEmail(req, user, token); // ✅ now user is defined
-  return { status: "new", message: "Verification email sent" };
+  return { status: "new", message: "your account has been created. please verify the email through link." };
 };
 
 

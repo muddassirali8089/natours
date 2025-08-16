@@ -9,7 +9,7 @@ const router = express.Router();
 
 
 router.post("/forgotPassword" , forgotPassword)
-router.patch("/resetPassword/:token", resetPassword);
+router.get("/resetPassword/:token", resetPassword);
 router.patch("/updateMyPassword", protect, updateMyPassword);
 router.patch("/updateMe" ,protect, updateMe)
 router.delete("/deleteMe" ,protect, deleteMe)

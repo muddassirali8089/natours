@@ -12,7 +12,6 @@ import { verifyEmail } from "../controllers/verifyEmail.js";
 
 export const createSendToken = (user, statusCode, res) => {
   const token = signToken(user._id);
-
   // Cookie options
   const cookieOptions = {
     expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days
@@ -68,7 +67,7 @@ export const login = catchAsync(async (req, res, next) => {
   if (!user.isVerified) {
     // Generate a new token
     const verificationToken = user.createEmailVerificationToken();
-    
+
     await user.save({ validateBeforeSave: false });
 
     // Send verification email
@@ -76,7 +75,7 @@ export const login = catchAsync(async (req, res, next) => {
 
     return next(
       new AppError(
-        "Your account is not verified. A new verification email has been sent.",
+        "Your account is not verified. A new verification email has been sent.please verify the email it will auto login you.",
         403
       )
     );
