@@ -85,6 +85,7 @@ app.use((req, res, next) => {
 // ✅ API Routes
 
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/tours", tourRouter);
 
 // ✅ 404 for undefined routes
 // Catch-all route for undefined routes

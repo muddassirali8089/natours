@@ -15,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ✅ Dynamic path to your data file
-const toursFilePath = path.join(__dirname, './dev-data/data/tours-simple.json');
+const toursFilePath = path.join(__dirname, './dev-data/data/tours.json');
 
 // ✅ Read JSON file
 const tours = JSON.parse(fs.readFileSync(toursFilePath, 'utf-8'));
