@@ -11,6 +11,7 @@ import { fileURLToPath } from "url";
 import AppError from "./utils/AppError.js";
 import tourRouter from "./routes/tour.routes.js";
 import userRouter from "./routes/user.routes.js";
+import reviewRouter from "./routes/review.routes.js";
 import connectDB from "./connection/connectDB.js";
 import globalErrorHandler from "./controllers/globalErrorHandler.js";
 import { generalLimiter, loginLimiter } from "./utils/rateLimiters.js";
@@ -86,6 +87,7 @@ app.use((req, res, next) => {
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/tours", tourRouter);
+app.use("/api/v1/reviews", reviewRouter);
 
 // ✅ 404 for undefined routes
 // Catch-all route for undefined routes
