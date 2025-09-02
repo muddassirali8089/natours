@@ -17,14 +17,14 @@ const reviewSchema = new mongoose.Schema(
       default: Date.now,
     },
 
-    // Belongs to a tour
+    // Reference to Tour
     tour: {
       type: mongoose.Schema.ObjectId,
       ref: "Tour",
       required: [true, "Review must belong to a tour."],
     },
 
-    // Belongs to a user
+    // Reference to User
     user: {
       type: mongoose.Schema.ObjectId,
       ref: "User",
@@ -32,25 +32,26 @@ const reviewSchema = new mongoose.Schema(
     },
   },
   {
+    timestamps: true, // ⏱ Adds createdAt & updatedAt automatically
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }
 );
 
-// 🔒 Ensure a user can leave only 1 review per tour
+// ✅ Ensure unique review per tour by each user
 reviewSchema.index({ tour: 1, user: 1 }, { unique: true });
 
-// Auto populate user (and optionally tour) when fetching reviews
+// 🔄 Auto populate user & tour when fetching reviews
 reviewSchema.pre(/^find/, function (next) {
   this.populate({
     path: "user",
-    select: "name photo",
+    select: "name photo -_id", // return only name & photo, hide _id
+  }).populate({
+    path: "tour",
+    select: "name -_id", // return only tour name
+    options: { strictPopulate: false },
   });
-  // If you also want to auto-populate tour details, uncomment below:
-  // this.populate({
-  //   path: "tour",
-  //   select: "name slug",
-  // });
+
   next();
 });
 

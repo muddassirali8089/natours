@@ -7,7 +7,7 @@ import {
 
 import { protect, restrictTo } from "../controllers/authContrller.js";
 
-const router = express.Router(); 
+const router = express.Router({ mergeParams: true }); 
 // ✅ mergeParams lets us access tourId from parent route (/tours/:tourId/reviews)
 
 // Routes
