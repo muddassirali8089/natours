@@ -48,9 +48,17 @@ reviewSchema.pre(/^find/, function (next) {
     select: "name photo -_id", // return only name & photo, hide _id
   }).populate({
     path: "tour",
-    select: "name -_id", // return only tour name
+    select: "name", // return only tour name
     options: { strictPopulate: false },
   });
+  // this.populate({
+  //   path: "user",
+  //   select: "name photo -_id", // return only name & photo, hide _id
+  // }).populate({
+  //   path: "tour",
+  //   select: "name", // return only tour name
+  //   options: { strictPopulate: false },
+  // });
 
   next();
 });

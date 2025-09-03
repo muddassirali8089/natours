@@ -3,6 +3,7 @@ import qs from "qs";
 import { APIFeatures } from "../utils/apiFeatures.js";
 import catchAsync from "./catchAsync.js";
 import AppError from "../utils/AppError.js";
+import Review from "../models/review.model.js";
 
 
 
@@ -77,7 +78,18 @@ export const getAllTours = catchAsync(async (req, res, next) => {
 
 
 export const getTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findById(req.params.id);
+  // 🔍 Debug: check the tour ID coming in
+  console.log("Tour ID:", req.params.id);
+
+  // 🔍 Debug: check if reviews exist for this tour
+  const reviews = await Review.find({ tour: req.params.id });
+  console.log("Reviews found:", reviews);
+
+  // Now fetch the tour + populate reviews
+  const tour = await Tour.findById(req.params.id).populate({
+    path: "reviews",
+    select: "review rating user createdAt -tour",
+  });
 
   if (!tour) {
     return next(new AppError("No tour found with that ID", 404));
