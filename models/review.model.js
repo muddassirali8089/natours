@@ -49,7 +49,7 @@ reviewSchema.pre(/^find/, function (next) {
   }).populate({
     path: "tour",
     select: "name", // return only tour name
-    options: { strictPopulate: false },
+    options: { strictPopulate: false }
   });
   // this.populate({
   //   path: "user",
