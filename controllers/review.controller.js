@@ -3,7 +3,7 @@ import AppError from "../utils/AppError.js";
 
 // ✅ Create a new review
 export const createReview = async (req, res, next) => {
-  
+
   const { tourId } = req.params;
   const { review, rating } = req.body;
 
@@ -28,6 +28,9 @@ export const createReview = async (req, res, next) => {
 
 
 export const getAllReviews = async (req, res, next) => {
+
+  console.log("review Route called...");
+  
   // If tourId exists (nested route), filter reviews by tour
   const filter = req.params.tourId ? { tour: req.params.tourId } : {};
 
@@ -47,20 +50,4 @@ export const getAllReviews = async (req, res, next) => {
 };
 
 // ✅ Get all reviews for a specific tour
-export const getTourReviews = async (req, res, next) => {
-  const { tourId } = req.params;
 
-  const reviews = await Review.find({ tour: tourId });
-
-  if (!reviews.length) {
-    return next(new AppError("No reviews found for this tour", 404));
-  }
-
-  res.status(200).json({
-    status: "success",
-    results: reviews.length,
-    data: {
-      reviews,
-    },
-  });
-};
