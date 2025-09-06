@@ -2,17 +2,16 @@ import express from "express";
 import {
   createReview,
   getAllReviews,
-  getTourReviews,
 } from "../controllers/review.controller.js";
 
 import { protect, restrictTo } from "../controllers/authContrller.js";
 
-const router = express.Router({ mergeParams: true }); 
-// ✅ mergeParams lets us access tourId from parent route (/tours/:tourId/reviews)
+const router = express.Router({ mergeParams: true });
 
-// Routes
+// GET /api/v1/tours/:tourId/reviews
 router.get("/", getAllReviews);
-router.get("/:tourId", getTourReviews);
-router.post("/:tourId", protect , restrictTo('user'), createReview);
+
+// POST /api/v1/tours/:tourId/reviews
+router.post("/", protect, restrictTo("user"), createReview);
 
 export default router;
