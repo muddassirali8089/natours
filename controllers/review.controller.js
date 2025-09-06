@@ -1,5 +1,6 @@
 import Review from "../models/review.model.js";
 import AppError from "../utils/AppError.js";
+import { deleteOne } from "./handlerFactory.js";
 
 // ✅ Create a new review
 export const createReview = async (req, res, next) => {
@@ -49,5 +50,8 @@ export const getAllReviews = async (req, res, next) => {
   });
 };
 
+
+// ✅ Delete review using factory
+export const deleteReview = deleteOne(Review);
 // ✅ Get all reviews for a specific tour
 

@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createReview,
+  deleteReview,
   getAllReviews,
 } from "../controllers/review.controller.js";
 
@@ -13,5 +14,7 @@ router.get("/", getAllReviews);
 
 // POST /api/v1/tours/:tourId/reviews
 router.post("/", protect, restrictTo("user"), createReview);
+
+router.delete("/:id", protect, restrictTo("user", "admin"), deleteReview);
 
 export default router;

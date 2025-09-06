@@ -34,4 +34,5 @@ router.get("/:id", getTour);
 router.patch("/:id", updateTour);
 router.delete("/:id", protect, restrictTo('admin' , 'lead-guide'),deleteTour);
 
+
 export default router;
