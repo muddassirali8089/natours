@@ -4,7 +4,8 @@ import { APIFeatures } from "../utils/apiFeatures.js";
 import catchAsync from "./catchAsync.js";
 import AppError from "../utils/AppError.js";
 import Review from "../models/review.model.js";
-import { deleteOne } from "./factory.controller.js";
+
+import { deleteOne, createOne, updateOne } from "../controllers/handlerFactory.js";
 
 
 /////////////////////////////////-----CREATE TOUR----/////////////////////////////////////////////
@@ -12,19 +13,8 @@ import { deleteOne } from "./factory.controller.js";
 
 
 
-export const createTour = catchAsync(async (req, res, next) => {
-  const newTour = await Tour.create(req.body);
-
-  res.status(201).json({
-    status: "success",
-    data: {
-      tour: newTour,
-    },
-  });
-
-
-
-});
+// ✅ Create tour using factory
+export const createTour = createOne(Tour);
 
 
 
@@ -105,23 +95,8 @@ export const getTour = catchAsync(async (req, res, next) => {
 
 //////////////////////////////----- UPDATE TOUR -------///////////////////////////////////////
 
-export const updateTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (!tour) {
-    return next(new AppError("No tour found with that ID", 404));
-  }
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      tour,
-    },
-  });
-});
+// ✅ Update tour using factory
+export const updateTour = updateOne(Tour);
 
 
 

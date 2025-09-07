@@ -3,6 +3,7 @@ import {
   createReview,
   deleteReview,
   getAllReviews,
+  updateReview,
 } from "../controllers/review.controller.js";
 
 import { protect, restrictTo } from "../controllers/authContrller.js";
@@ -15,6 +16,10 @@ router.get("/", getAllReviews);
 // POST /api/v1/tours/:tourId/reviews
 router.post("/", protect, restrictTo("user"), createReview);
 
+// PATCH /api/v1/tours/:tourId/reviews/:id
+router.patch("/:id", protect, restrictTo("user", "admin"), updateReview);
+
+// DELETE /api/v1/tours/:tourId/reviews/:id
 router.delete("/:id", protect, restrictTo("user", "admin"), deleteReview);
 
 export default router;

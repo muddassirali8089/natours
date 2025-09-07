@@ -6,6 +6,7 @@ import {
   resetPassword,
   updateMyPassword,
   protect,
+  restrictTo,
 } from "../controllers/authContrller.js";
 import {
   deleteMe,
@@ -13,9 +14,11 @@ import {
   updateMe,
   getUser,
   deleteUser,
+  updateUser,
 } from "../controllers/user.controller.js";
 import { loginLimiter } from "../utils/rateLimiters.js";
 import { verifyEmail } from "../controllers/verifyEmail.js";
+
 
 const router = express.Router();
 
@@ -31,10 +34,12 @@ router.patch("/verify-email/:token", verifyEmail);
 router.post("/login", loginLimiter, login);
 router.get("/:id", getUser);
 
+// PATCH /api/v1/users/:id (Admin only)
+router.patch("/:id", protect, restrictTo("admin"), updateUser);
+
+// DELETE /api/v1/users/:id (Admin only)
 router.delete("/:id", protect, restrictTo("admin"), deleteUser);
 
 // router.post("/" , createUser);
-// router.delete("/:id" , deleteUser)
-// router.patch("/:id" , updateUser)
 
 export default router;

@@ -1,31 +1,29 @@
 import Review from "../models/review.model.js";
 import AppError from "../utils/AppError.js";
-import { deleteOne } from "./handlerFactory.js";
+import catchAsync from "./catchAsync.js";
+import { deleteOne, createOne, updateOne } from "./handlerFactory.js";
 
-// ✅ Create a new review
-export const createReview = async (req, res, next) => {
+// ✅ Create a new review using factory
+export const createReview = [
+  catchAsync(async (req, res, next) => {
+    const { tourId } = req.params;
+    const { review, rating } = req.body;
 
-  const { tourId } = req.params;
-  const { review, rating } = req.body;
+    if (!review || !rating) {
+      return next(new AppError("Review and rating are required", 400));
+    }
 
-  if (!review || !rating) {
-    return next(new AppError("Review and rating are required", 400));
-  }
+    // Set tour and user from params and auth middleware
+    req.body.tour = tourId;
+    req.body.user = req.user.id;
 
-  const newReview = await Review.create({
-    review,
-    rating,
-    tour: tourId,
-    user: req.user.id, // ✅ from auth middleware
-  });
+    next(); // Pass to factory function
+  }),
+  createOne(Review)
+];
 
-  res.status(201).json({
-    status: "success",
-    data: {
-      review: newReview,
-    },
-  });
-};
+// ✅ Update review using factory
+export const updateReview = updateOne(Review);
 
 
 export const getAllReviews = async (req, res, next) => {
