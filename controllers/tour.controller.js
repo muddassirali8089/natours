@@ -158,7 +158,6 @@ export const getTourStats = catchAsync(async (req, res, next) => {
 
 //////////////////////////////----- GET MONTHLY PLAN -------///////////////////////////////////////
 
-
 export const getMonthlyPlan = catchAsync(async (req, res, next) => {
   const year = req.params.year * 1; // e.g. 2024
 
@@ -200,6 +199,109 @@ export const getMonthlyPlan = catchAsync(async (req, res, next) => {
       year,
       monthlyStats: plan,
     },
+  });
+});
+
+//////////////////////////////----- GEOSPATIAL QUERIES -------///////////////////////////////////////
+
+// 🌍 Find tours within a specified radius
+// URL: /tours-within/:distance/center/:latlng/unit/:unit
+// Example: /tours-within/233/center/34.111745,-118.113491/unit/mi
+export const getToursWithin = catchAsync(async (req, res, next) => {
+  const { distance, latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  // Validate coordinates
+  if (!lat || !lng) {
+    return next(
+      new AppError(
+        'Please provide latitude and longitude in the format lat,lng.',
+        400
+      )
+    );
+  }
+
+  // Convert distance to radians
+  // Earth radius: 3963.2 miles, 6378.1 kilometers
+  const radius = unit === 'mi' ? distance / 3963.2 : distance / 6378.1;
+
+  console.log(`🌍 Searching for tours within ${distance} ${unit} of coordinates [${lat}, ${lng}]`);
+  console.log(`📏 Radius in radians: ${radius}`);
+
+  // Find tours within the specified radius using $geoWithin
+  const tours = await Tour.find({
+    startLocation: {
+      $geoWithin: {
+        $centerSphere: [[lng, lat], radius] // Note: MongoDB expects [lng, lat] format
+      }
+    }
+  });
+
+  res.status(200).json({
+    status: 'success',
+    results: tours.length,
+    data: {
+      data: tours
+    }
+  });
+});
+
+// 🗺️ Calculate distances from a point to all tours
+// URL: /tours-distances/:latlng/unit/:unit
+// Example: /tours-distances/34.111745,-118.113491/unit/mi
+export const getDistances = catchAsync(async (req, res, next) => {
+  const { latlng, unit } = req.params;
+  const [lat, lng] = latlng.split(',');
+
+  // Validate coordinates
+  if (!lat || !lng) {
+    return next(
+      new AppError(
+        'Please provide latitude and longitude in the format lat,lng.',
+        400
+      )
+    );
+  }
+
+  // Distance multiplier for unit conversion
+  const multiplier = unit === 'mi' ? 0.000621371 : 0.001; // Convert meters to miles or kilometers
+
+  console.log(`📍 Calculating distances from coordinates [${lat}, ${lng}] in ${unit}`);
+
+  // Use aggregation pipeline with $geoNear for distance calculation
+  const distances = await Tour.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [lng * 1, lat * 1] // Convert to numbers and use [lng, lat]
+        },
+        distanceField: 'distance',
+        distanceMultiplier: multiplier // Convert from meters to specified unit
+      }
+    },
+    {
+      $project: {
+        distance: 1,
+        name: 1,
+        startLocation: 1,
+        ratingsAverage: 1,
+        price: 1,
+        difficulty: 1,
+        duration: 1
+      }
+    },
+    {
+      $sort: { distance: 1 } // Sort by distance (closest first)
+    }
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    results: distances.length,
+    data: {
+      data: distances
+    }
   });
 });
 

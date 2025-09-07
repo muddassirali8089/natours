@@ -59,6 +59,28 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// 🚀 DATABASE INDEXES FOR PERFORMANCE OPTIMIZATION
+
+// 1. Index for email (most critical for authentication)
+userSchema.index({ email: 1 }, { unique: true }); // Unique index for email
+
+// 2. Index for password reset functionality
+userSchema.index({ passwordResetToken: 1 });
+userSchema.index({ passwordResetExpires: 1 });
+
+// 3. Index for email verification
+userSchema.index({ emailVerificationToken: 1 });
+userSchema.index({ emailVerificationExpires: 1 });
+
+// 4. Compound index for active users lookup
+userSchema.index({ active: 1, emailVerified: 1 });
+
+// 5. Index for role-based queries
+userSchema.index({ roles: 1 });
+
+// 6. Text search index for user names
+userSchema.index({ name: "text" });
+
 // ✅ PRE-SAVE MIDDLEWARE to hash password
 userSchema.pre("save", async function (next) {
   // Only hash the password if it's been modified or is new

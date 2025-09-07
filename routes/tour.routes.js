@@ -8,6 +8,8 @@ import {
   aliasTopTours,
   getTourStats,
   getMonthlyPlan,
+  getToursWithin,
+  getDistances,
 } from "../controllers/tour.controller.js";
 
 import reviewRouter from "./review.routes.js";
@@ -28,6 +30,16 @@ router.get("/stats", protect, restrictTo("admin"), getTourStats);
 
 // ✅ Admins and lead-guides can see monthly plans
 router.get("/monthly-plan/:year", protect, restrictTo("admin", "lead-guide"), getMonthlyPlan);
+
+// 🌍 GEOSPATIAL ROUTES - BEFORE /:id route
+// Find tours within radius
+router.get(
+  "/tours-within/:distance/center/:latlng/unit/:unit",
+  getToursWithin
+);
+
+// Calculate distances to all tours
+router.get("/tours-distances/:latlng/unit/:unit", getDistances);
 
 // GET /api/v1/tours
 // ✅ Anyone can read tours

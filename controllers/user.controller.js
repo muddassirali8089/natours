@@ -45,10 +45,6 @@ export const updateMe = catchAsync(async (req, res, next) => {
   const isEmailChanging = filteredBody.email && filteredBody.email !== currentUser.email;
 
   if (isEmailChanging) {
-    // ⚠️ IMPORTANT: If user enters wrong email, they will be locked out!
-    // SOLUTION: Contact customer support to revert email change
-    // TODO: Consider implementing email revert functionality if needed
-    
     // 4. If email is changing, require verification
     // Check if email already exists
     const existingUser = await User.findOne({ email: filteredBody.email });
@@ -60,14 +56,28 @@ export const updateMe = catchAsync(async (req, res, next) => {
     filteredBody.emailVerified = false;
     const verificationToken = currentUser.createEmailVerificationToken();
     
-    // Update user with new email (unverified)
+    // 🔧 BUG FIX: Include the token fields from currentUser in the update
+    filteredBody.emailVerificationToken = currentUser.emailVerificationToken;
+    filteredBody.emailVerificationExpires = currentUser.emailVerificationExpires;
+    
+    // 🔍 DEBUG: Log what we're saving
+    console.log("🔍 Email update debugging:");
+    console.log("Plain token:", verificationToken);
+    console.log("Hashed token:", currentUser.emailVerificationToken);
+    console.log("Token expires at:", currentUser.emailVerificationExpires);
+    console.log("Current time:", Date.now());
+    console.log("Time until expiry:", currentUser.emailVerificationExpires - Date.now(), "ms");
+    
+    // Update user with new email AND token fields
     const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
       new: true,
       runValidators: true
     });
     
-    // Save the verification token
-    await updatedUser.save({ validateBeforeSave: false });
+    // 🔍 DEBUG: Verify the token was saved
+    console.log("🔍 After update:");
+    console.log("Updated user token:", updatedUser.emailVerificationToken);
+    console.log("Updated user expires:", updatedUser.emailVerificationExpires);
 
     // Send verification email to NEW email address
     const tempUser = { ...updatedUser.toObject(), email: filteredBody.email };
@@ -75,7 +85,7 @@ export const updateMe = catchAsync(async (req, res, next) => {
 
     return res.status(200).json({
       status: "success",
-      message: "Email updated but requires verification. Please check your new email for verification link. WARNING: If you entered the wrong email, contact customer support immediately.",
+      message: "Email updated successfully. Please check your new email for verification link to complete the process.",
       data: {
         user: updatedUser
       }

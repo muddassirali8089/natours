@@ -131,6 +131,43 @@ tourSchema.virtual("reviews", {
   localField: "_id", // field in Tour
 });
 
+// 🚀 DATABASE INDEXES FOR PERFORMANCE OPTIMIZATION
+
+// 1. Single field indexes for commonly queried fields
+tourSchema.index({ price: 1 }); // Ascending order for price queries
+tourSchema.index({ ratingsAverage: -1 }); // Descending order (higher ratings first)
+tourSchema.index({ slug: 1 }); // For slug-based queries
+
+// 2. Compound index for price and ratingsAverage (commonly filtered together)
+tourSchema.index({ price: 1, ratingsAverage: -1 });
+
+// 3. Compound index for filtering and sorting (most common query pattern)
+tourSchema.index({ ratingsAverage: -1, price: 1, difficulty: 1 });
+
+// 4. Text index for search functionality
+tourSchema.index({ 
+  name: "text", 
+  summary: "text", 
+  description: "text" 
+}, {
+  weights: {
+    name: 10,      // Name is most important
+    summary: 5,    // Summary is medium importance  
+    description: 1 // Description is least important
+  }
+});
+
+// 5. Geospatial index for location-based queries
+tourSchema.index({ startLocation: "2dsphere" });
+
+// 6. Index for date-based queries (monthly plan functionality)
+tourSchema.index({ startDates: 1 });
+
+// 7. Index for commonly used filters
+tourSchema.index({ difficulty: 1 });
+tourSchema.index({ duration: 1 });
+tourSchema.index({ maxGroupSize: 1 });
+
 // DOCUMENT MIDDLEWARE: runs before .save() and .create()
 tourSchema.pre("save", function (next) {
   this.slug = slugify(this.name, { lower: true });
