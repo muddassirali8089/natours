@@ -1,7 +1,7 @@
 import User from '../models/user.model.js';
 import catchAsync from './catchAsync.js';
 import AppError from '../utils/AppError.js';
-
+import { deleteOne } from './handlerFactory.js';
 
 export const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -85,6 +85,8 @@ export const getUser = catchAsync(async (req, res, next) => {
 });
 
 
+
+
 export const createUser = (req, res) => {
   return res.status(500).json({
     status: "err",
@@ -92,12 +94,15 @@ export const createUser = (req, res) => {
   });
 };
 
-export const deleteUser = (req, res) => {
-  return res.status(500).json({
-    status: "err",
-    message: "user is route is not define",
-  });
-};
+
+export const deleteUser = deleteOne(User);
+
+// export const deleteUser = (req, res) => {
+//   return res.status(500).json({
+//     status: "err",
+//     message: "user is route is not define",
+//   });
+// };
 
 export const updateUser = (req, res) => {
   return res.status(500).json({

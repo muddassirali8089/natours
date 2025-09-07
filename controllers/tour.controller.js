@@ -4,7 +4,7 @@ import { APIFeatures } from "../utils/apiFeatures.js";
 import catchAsync from "./catchAsync.js";
 import AppError from "../utils/AppError.js";
 import Review from "../models/review.model.js";
-
+import { deleteOne } from "./factory.controller.js";
 
 
 /////////////////////////////////-----CREATE TOUR----/////////////////////////////////////////////
@@ -127,18 +127,20 @@ export const updateTour = catchAsync(async (req, res, next) => {
 
 //////////////////////////////----- DELETE TOUR -------///////////////////////////////////////
 
-export const deleteTour = catchAsync(async (req, res, next) => {
-  const tour = await Tour.findByIdAndDelete(req.params.id);
 
-  if (!tour) {
-    return next(new AppError("No tour found with that ID", 404));
-  }
+export const deleteTour = deleteOne(Tour);
+// export const deleteTour = catchAsync(async (req, res, next) => {
+//   const tour = await Tour.findByIdAndDelete(req.params.id);
 
-  res.status(204).json({
-    status: "success",
-    data: null,
-  });
-});
+//   if (!tour) {
+//     return next(new AppError("No tour found with that ID", 404));
+//   }
+
+//   res.status(204).json({
+//     status: "success",
+//     data: null,
+//   });
+// });
 
 //////////////////////////////----- GET TOOUR STATS-------///////////////////////////////////////
 
