@@ -17,9 +17,9 @@ router.get("/", getAllReviews);
 router.post("/", protect, restrictTo("user"), createReview);
 
 // PATCH /api/v1/tours/:tourId/reviews/:id
-router.patch("/:id", protect, restrictTo("user", "admin"), updateReview);
+router.patch("/:id", protect, restrictTo("admin"), updateReview);
 
 // DELETE /api/v1/tours/:tourId/reviews/:id
-router.delete("/:id", protect, restrictTo("user", "admin"), deleteReview);
+router.delete("/:id", protect, deleteReview);
 
 export default router;

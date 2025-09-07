@@ -1,5 +1,55 @@
 import AppError from "../utils/AppError.js";
 import catchAsync from "../controllers/catchAsync.js";
+import { APIFeatures } from "../utils/apiFeatures.js";
+
+// ✅ Factory method for reading all documents
+export const getAll = (Model) =>
+  catchAsync(async (req, res, next) => {
+    // Allow for nested GET reviews on tour (hack)
+    let filter = {};
+    if (req.params.tourId) filter = { tour: req.params.tourId };
+
+    const rawQuery = req.queryOptions || req.query;
+
+    const features = new APIFeatures(Model.find(filter), rawQuery)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    const total = await Model.countDocuments(filter);
+    if (features.skip >= total) {
+      return next(new AppError("This page does not exist", 404));
+    }
+
+    const docs = await features.query;
+
+    res.status(200).json({
+      status: "success",
+      results: docs.length,
+      data: { [Model.collection.name]: docs },
+    });
+  });
+
+// ✅ Factory method for reading a single document
+export const getOne = (Model, popOptions) =>
+  catchAsync(async (req, res, next) => {
+    let query = Model.findById(req.params.id);
+    if (popOptions) query = query.populate(popOptions);
+
+    const doc = await query;
+
+    if (!doc) {
+      return next(new AppError("No document found with that ID", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        [Model.collection.name.slice(0, -1)]: doc, // Remove 's' from collection name
+      },
+    });
+  });
 
 export const createOne = (Model) =>
   catchAsync(async (req, res, next) => {

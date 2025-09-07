@@ -5,7 +5,7 @@ import catchAsync from "./catchAsync.js";
 import AppError from "../utils/AppError.js";
 import Review from "../models/review.model.js";
 
-import { deleteOne, createOne, updateOne } from "../controllers/handlerFactory.js";
+import { deleteOne, createOne, updateOne, getAll, getOne } from "../controllers/handlerFactory.js";
 
 
 /////////////////////////////////-----CREATE TOUR----/////////////////////////////////////////////
@@ -39,59 +39,67 @@ export const aliasTopTours = catchAsync(async (req, res, next) => {
 
 //////////////////////////////----- GET ALL TOOURS-------///////////////////////////////////////
 
-export const getAllTours = catchAsync(async (req, res, next) => {
-  const rawQuery = req.queryOptions || req.query;
+// ✅ Get all tours using factory
+export const getAllTours = getAll(Tour);
 
-  const features = new APIFeatures(Tour.find(), rawQuery)
-    .filter()
-    .sort()
-    .limitFields()
-    .paginate();
+// Manual implementation (kept as reference/backup)
+// export const getAllTours = catchAsync(async (req, res, next) => {
+//   const rawQuery = req.queryOptions || req.query;
 
-  const total = await Tour.countDocuments();
-  if (features.skip >= total) {
-    return next(new AppError("This page does not exist", 404));
-  }
+//   const features = new APIFeatures(Tour.find(), rawQuery)
+//     .filter()
+//     .sort()
+//     .limitFields()
+//     .paginate();
 
-  const tours = await features.query;
+//   const total = await Tour.countDocuments();
+//   if (features.skip >= total) {
+//     return next(new AppError("This page does not exist", 404));
+//   }
 
-  res.status(200).json({
-    status: "success",
-    results: tours.length,
-    data: { tours },
-  });
-});
+//   const tours = await features.query;
 
-
+//   res.status(200).json({
+//     status: "success",
+//     results: tours.length,
+//     data: { tours },
+//   });
+// });
 
 //////////////////////////////----- GET TOOUR BY ID -------///////////////////////////////////////
 
-
-export const getTour = catchAsync(async (req, res, next) => {
-  // 🔍 Debug: check the tour ID coming in
-  console.log("Tour ID:", req.params.id);
-
-  // 🔍 Debug: check if reviews exist for this tour
-  const reviews = await Review.find({ tour: req.params.id });
-  console.log("Reviews found:", reviews);
-
-  // Now fetch the tour + populate reviews
-  const tour = await Tour.findById(req.params.id).populate({
-    path: "reviews",
-    select: "review rating user createdAt -tour",
-  });
-
-  if (!tour) {
-    return next(new AppError("No tour found with that ID", 404));
-  }
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      tour,
-    },
-  });
+// ✅ Get tour by ID using factory with population
+export const getTour = getOne(Tour, {
+  path: "reviews",
+  select: "review rating user createdAt -tour",
 });
+
+// Manual implementation (kept as reference/backup)
+// export const getTour = catchAsync(async (req, res, next) => {
+//   // 🔍 Debug: check the tour ID coming in
+//   console.log("Tour ID:", req.params.id);
+
+//   // 🔍 Debug: check if reviews exist for this tour
+//   const reviews = await Review.find({ tour: req.params.id });
+//   console.log("Reviews found:", reviews);
+
+//   // Now fetch the tour + populate reviews
+//   const tour = await Tour.findById(req.params.id).populate({
+//     path: "reviews",
+//     select: "review rating user createdAt -tour",
+//   });
+
+//   if (!tour) {
+//     return next(new AppError("No tour found with that ID", 404));
+//   }
+
+//   res.status(200).json({
+//     status: "success",
+//     data: {
+//       tour,
+//     },
+//   });
+// });
 
 //////////////////////////////----- UPDATE TOUR -------///////////////////////////////////////
 
