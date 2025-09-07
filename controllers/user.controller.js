@@ -2,6 +2,7 @@ import User from '../models/user.model.js';
 import catchAsync from './catchAsync.js';
 import AppError from '../utils/AppError.js';
 import { deleteOne, updateOne } from './handlerFactory.js';
+import { sendVerificationEmail } from './sendVerificationEmail.js';
 
 export const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -39,7 +40,49 @@ export const updateMe = catchAsync(async (req, res, next) => {
   // 2. Filter body to allow only name & email
   const filteredBody = filterObj(req.body, "name", "email");
 
-  // 3. Update user document
+  // 3. Check if email is being changed
+  const currentUser = await User.findById(req.user.id);
+  const isEmailChanging = filteredBody.email && filteredBody.email !== currentUser.email;
+
+  if (isEmailChanging) {
+    // ⚠️ IMPORTANT: If user enters wrong email, they will be locked out!
+    // SOLUTION: Contact customer support to revert email change
+    // TODO: Consider implementing email revert functionality if needed
+    
+    // 4. If email is changing, require verification
+    // Check if email already exists
+    const existingUser = await User.findOne({ email: filteredBody.email });
+    if (existingUser) {
+      return next(new AppError("Email already in use", 400));
+    }
+
+    // Set email as unverified and create verification token
+    filteredBody.emailVerified = false;
+    const verificationToken = currentUser.createEmailVerificationToken();
+    
+    // Update user with new email (unverified)
+    const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
+      new: true,
+      runValidators: true
+    });
+    
+    // Save the verification token
+    await updatedUser.save({ validateBeforeSave: false });
+
+    // Send verification email to NEW email address
+    const tempUser = { ...updatedUser.toObject(), email: filteredBody.email };
+    await sendVerificationEmail(req, tempUser, verificationToken);
+
+    return res.status(200).json({
+      status: "success",
+      message: "Email updated but requires verification. Please check your new email for verification link. WARNING: If you entered the wrong email, contact customer support immediately.",
+      data: {
+        user: updatedUser
+      }
+    });
+  }
+
+  // 5. If only name is being updated (no email change)
   const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
     new: true,
     runValidators: true
@@ -103,5 +146,31 @@ export const deleteUser = deleteOne(User);
 //   });
 // };
 
-// ✅ Update user using factory
-export const updateUser = updateOne(User);
+// ❌ REMOVED: Admin cannot update other users' personal info
+// This function has been removed as per security requirements
+// Admins can only manage their own profile via /updateMe
+
+// export const updateUser = catchAsync(async (req, res, next) => {
+//   // This functionality is intentionally disabled
+//   // Admins cannot change other users' personal information
+// });
+
+// ✅ Admin can deactivate users (separate from delete)
+export const deactivateUser = catchAsync(async (req, res, next) => {
+  const user = await User.findByIdAndUpdate(
+    req.params.id, 
+    { active: false }, 
+    { new: true, runValidators: true }
+  );
+
+  if (!user) {
+    return next(new AppError("No user found with that ID", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      user
+    }
+  });
+});

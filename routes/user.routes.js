@@ -14,7 +14,7 @@ import {
   updateMe,
   getUser,
   deleteUser,
-  updateUser,
+  deactivateUser,
 } from "../controllers/user.controller.js";
 import { loginLimiter, generalLimiter } from "../utils/rateLimiters.js";
 import { verifyEmail } from "../controllers/verifyEmail.js";
@@ -41,12 +41,18 @@ router.get("/", protect, restrictTo("admin", "lead-guide"), getAllUsers);
 // ✅ Authenticated users can read user profiles
 router.get("/:id", protect, getUser);
 
-// PATCH /api/v1/users/:id
-// ✅ Only admins can update any user
-router.patch("/:id", protect, restrictTo("admin"), updateUser);
+// ❌ REMOVED: Admins cannot update other users' personal info
+// router.patch("/:id", protect, restrictTo("admin"), updateUser);
+
+// ❌ REMOVED: Admins cannot force verify other users' emails  
+// router.patch("/:id/verify-email", protect, restrictTo("admin"), updateUser);
+
+// PATCH /api/v1/users/:id/deactivate
+// ✅ Only admins can deactivate users (system action, not personal info)
+router.patch("/:id/deactivate", protect, restrictTo("admin"), deactivateUser);
 
 // DELETE /api/v1/users/:id
-// ✅ Only admins can delete users
+// ✅ Only admins can delete users (system action, not personal info)
 router.delete("/:id", protect, restrictTo("admin"), deleteUser);
 
 export default router;
