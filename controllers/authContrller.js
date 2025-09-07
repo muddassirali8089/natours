@@ -64,7 +64,8 @@ export const login = catchAsync(async (req, res, next) => {
   }
 
   // 3) Check if user is verified
-  if (!user.isVerified) {
+  if (!user.emailVerified) {
+    
     // Generate a new token
     const verificationToken = user.createEmailVerificationToken();
 
