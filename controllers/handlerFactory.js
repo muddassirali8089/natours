@@ -5,6 +5,7 @@ import { APIFeatures } from "../utils/apiFeatures.js";
 // ✅ Factory method for reading all documents
 export const getAll = (Model) =>
   catchAsync(async (req, res, next) => {
+    console.log("getAll");
     // Allow for nested GET reviews on tour (hack)
     let filter = {};
     if (req.params.tourId) filter = { tour: req.params.tourId };
@@ -18,7 +19,9 @@ export const getAll = (Model) =>
       .paginate();
 
     const total = await Model.countDocuments(filter);
-    if (features.skip >= total) {
+    
+    // Only check pagination if we have documents and are actually paginating
+    if (total > 0 && features.skip >= total) {
       return next(new AppError("This page does not exist", 404));
     }
 

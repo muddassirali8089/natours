@@ -1,4 +1,5 @@
 import User from "../models/user.model.js"; // adjust path as needed
+import Review from "../models/review.model.js";
 import catchAsync from "../controllers/catchAsync.js";
 import AppError from "../utils/AppError.js";
 import jwt from "jsonwebtoken";
@@ -138,11 +139,12 @@ export const protect = catchAsync(async (req, res, next) => {
   // 2) Verify token
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
-  // 3) Check if user still exists
-  const currentUser = await User.findById(decoded.id);
-  if (!currentUser) {
+  // 3) Check if user still exists and is active
+  const currentUser = await User.findById(decoded.id).select('+active');
+  
+  if (!currentUser || !currentUser.active) {
     return next(
-      new AppError("The user belonging to this token no longer exists.", 401)
+      new AppError("The user belonging to this token no longer exists or has been deactivated.", 401)
     );
   }
 
@@ -155,6 +157,94 @@ export const protect = catchAsync(async (req, res, next) => {
 
   // 5) Grant access to protected route
   req.user = currentUser;
+  next();
+});
+
+// ✅ Authorization middleware - check if user owns the resource
+export const checkOwnership = (Model) =>
+  catchAsync(async (req, res, next) => {
+    // Find the document by ID
+    const doc = await Model.findById(req.params.id);
+
+    if (!doc) {
+      return next(new AppError("No document found with that ID", 404));
+    }
+
+    // Check if the logged-in user owns this document
+    // For reviews: doc.user should equal req.user.id
+    // For users: doc._id should equal req.user.id
+    const isOwner = doc.user 
+      ? doc.user.toString() === req.user.id 
+      : doc._id.toString() === req.user.id;
+
+    if (!isOwner && !req.user.roles.includes('admin')) {
+      return next(
+        new AppError("You do not have permission to perform this action", 403)
+      );
+    }
+
+    next();
+  });
+
+// ✅ Authorization middleware specifically for reviews
+export const checkReviewOwnership = catchAsync(async (req, res, next) => {
+  const review = await Review.findById(req.params.id);
+
+  if (!review) {
+    return next(new AppError("No review found with that ID", 404));
+  }
+
+  // 🔍 Debug: Log the IDs for comparison
+  console.log("🔍 Review ownership check:");
+  console.log("Review user:", review.user);
+  
+  // Handle both populated and non-populated user field
+  const reviewUserId = review.user._id ? review.user._id.toString() : review.user.toString();
+  const currentUserId = req.user.id || req.user._id;
+  
+  console.log("Review user ID:", reviewUserId);
+  console.log("Current user ID:", currentUserId.toString());
+  console.log("User roles:", req.user.roles);
+
+  // Check if user owns this review OR is admin
+  const isOwner = reviewUserId === currentUserId.toString();
+  const isAdmin = req.user.roles.includes('admin');
+
+  console.log("Is owner:", isOwner);
+  console.log("Is admin:", isAdmin);
+
+  if (!isOwner && !isAdmin) {
+    return next(
+      new AppError("You can only delete your own reviews", 403)
+    );
+  }
+
+  console.log("✅ Authorization passed for review deletion");
+  next();
+});
+
+// ✅ Authorization middleware for review updates - allows users to modify their own reviews
+export const checkReviewUpdateOwnership = catchAsync(async (req, res, next) => {
+  const review = await Review.findById(req.params.id);
+
+  if (!review) {
+    return next(new AppError("No review found with that ID", 404));
+  }
+
+  // Handle both populated and non-populated user field
+  const reviewUserId = review.user._id ? review.user._id.toString() : review.user.toString();
+  const currentUserId = req.user.id || req.user._id;
+
+  // Allow users to update their own reviews, admins can update any review
+  const isOwner = reviewUserId === currentUserId.toString();
+  const isAdmin = req.user.roles.includes('admin');
+
+  if (!isOwner && !isAdmin) {
+    return next(
+      new AppError("You can only update your own reviews", 403)
+    );
+  }
+
   next();
 });
 

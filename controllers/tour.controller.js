@@ -11,8 +11,6 @@ import { deleteOne, createOne, updateOne, getAll, getOne } from "../controllers/
 /////////////////////////////////-----CREATE TOUR----/////////////////////////////////////////////
 
 
-
-
 // ✅ Create tour using factory
 export const createTour = createOne(Tour);
 

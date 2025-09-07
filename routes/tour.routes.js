@@ -20,16 +20,31 @@ router.use("/:tourId/reviews", reviewRouter);
 // Aliased route
 router.get("/top-5-cheap", aliasTopTours, getAllTours);
 
-// Stats routes
-router.get("/stats", getTourStats);
-router.get("/monthly-plan/:year", getMonthlyPlan);
+// GET /api/v1/tours
+// ✅ Anyone can read tours
+router.get("/", getAllTours);
 
-// RESTful routes
-router.get("/", protect, getAllTours);
-router.post("/", createTour);
-
+// GET /api/v1/tours/:id
+// ✅ Anyone can read a single tour
 router.get("/:id", getTour);
-router.patch("/:id", updateTour);
-router.delete("/:id", protect, restrictTo("admin", "lead-guide"), deleteTour);
+
+// POST /api/v1/tours
+// ✅ Only guides, lead-guides, and admins can create tours
+router.post("/", protect, restrictTo("guide", "lead-guide", "admin"), createTour);
+
+// PATCH /api/v1/tours/:id
+// ✅ Only lead-guides and admins can update tours
+router.patch("/:id", protect, restrictTo("lead-guide", "admin"), updateTour);
+
+// DELETE /api/v1/tours/:id
+// ✅ Only admins can delete tours
+router.delete("/:id", protect, restrictTo("admin"), deleteTour);
+
+// Stats routes
+// ✅ Only admins can see tour stats
+router.get("/stats", protect, restrictTo("admin"), getTourStats);
+
+// ✅ Admins and lead-guides can see monthly plans
+router.get("/monthly-plan/:year", protect, restrictTo("admin", "lead-guide"), getMonthlyPlan);
 
 export default router;
