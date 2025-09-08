@@ -42,16 +42,22 @@ const ToursPage = () => {
   const handleSearch = (e) => {
     e.preventDefault()
     dispatch(setFilters({ search: searchTerm }))
+    // Trigger new API call with search parameter
+    dispatch(fetchTours({ search: searchTerm }))
   }
 
   const handleDifficultyChange = (difficulty) => {
     setSelectedDifficulty(difficulty)
     dispatch(setFilters({ difficulty }))
+    // Trigger new API call with difficulty filter
+    dispatch(fetchTours({ difficulty }))
   }
 
   const handleSortChange = (sort) => {
     setSortBy(sort)
     dispatch(setSort(sort))
+    // Trigger new API call with sort parameter
+    dispatch(fetchTours({ sort }))
   }
 
   const handleClearFilters = () => {
@@ -59,6 +65,8 @@ const ToursPage = () => {
     setSelectedDifficulty('')
     setSortBy('price')
     dispatch(clearFilters())
+    // Trigger new API call without filters
+    dispatch(fetchTours())
   }
 
   const difficultyColors = {

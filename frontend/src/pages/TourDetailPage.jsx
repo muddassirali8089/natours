@@ -19,6 +19,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
+import TourMap from '../components/ui/TourMap'
+import SimpleMap from '../components/ui/SimpleMap'
 
 const TourDetailPage = () => {
   const { tourId } = useParams()
@@ -198,6 +200,46 @@ const TourDetailPage = () => {
                       </div>
                     ))}
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tour Itinerary */}
+            {tour.locations && tour.locations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tour Itinerary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {[...tour.locations]
+                      .sort((a, b) => a.day - b.day)
+                      .map((location, index) => (
+                        <div key={location._id || index} className="flex items-start space-x-4 p-4 bg-secondary-50 rounded-lg">
+                          <div className="flex-shrink-0 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                            {location.day}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-secondary-900">{location.description}</h4>
+                            <p className="text-sm text-secondary-600">
+                              Day {location.day} of your {tour.duration}-day adventure
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Tour Map */}
+            {tour.locations && tour.locations.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tour Route Map</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TourMap tour={tour} />
                 </CardContent>
               </Card>
             )}

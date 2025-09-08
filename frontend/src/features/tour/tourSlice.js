@@ -180,7 +180,7 @@ const tourSlice = createSlice({
       })
       .addCase(fetchTour.fulfilled, (state, action) => {
         state.isLoading = false
-        state.currentTour = action.payload.data
+        state.currentTour = action.payload.data.tour
         state.error = null
       })
       .addCase(fetchTour.rejected, (state, action) => {
