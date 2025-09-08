@@ -111,11 +111,12 @@ const reviewSlice = createSlice({
       })
       .addCase(fetchReviews.fulfilled, (state, action) => {
         state.isLoading = false
-        state.reviews = action.payload.data
+        // Handle the API response format: { status: "success", results: number, data: { reviews: [...] } }
+        state.reviews = action.payload.data.reviews || action.payload.data
         state.pagination = {
           ...state.pagination,
-          totalReviews: action.payload.total,
-          totalPages: Math.ceil(action.payload.total / state.pagination.reviewsPerPage),
+          totalReviews: action.payload.results || action.payload.total,
+          totalPages: Math.ceil((action.payload.results || action.payload.total) / state.pagination.reviewsPerPage),
         }
         state.error = null
       })
@@ -131,7 +132,8 @@ const reviewSlice = createSlice({
       })
       .addCase(fetchTourReviews.fulfilled, (state, action) => {
         state.isLoading = false
-        state.reviews = action.payload.data
+        // Handle the API response format: { status: "success", results: number, data: { reviews: [...] } }
+        state.reviews = action.payload.data.reviews || action.payload.data
         state.error = null
       })
       .addCase(fetchTourReviews.rejected, (state, action) => {
@@ -146,7 +148,8 @@ const reviewSlice = createSlice({
       })
       .addCase(fetchReview.fulfilled, (state, action) => {
         state.isLoading = false
-        state.currentReview = action.payload.data
+        // Handle the API response format: { status: "success", data: { review: {...} } }
+        state.currentReview = action.payload.data.review || action.payload.data
         state.error = null
       })
       .addCase(fetchReview.rejected, (state, action) => {
@@ -161,7 +164,9 @@ const reviewSlice = createSlice({
       })
       .addCase(createReview.fulfilled, (state, action) => {
         state.isLoading = false
-        state.reviews.unshift(action.payload.data)
+        // Handle the API response format: { status: "success", data: { review: {...} } }
+        const newReview = action.payload.data.review || action.payload.data
+        state.reviews.unshift(newReview)
         state.error = null
       })
       .addCase(createReview.rejected, (state, action) => {
@@ -176,12 +181,14 @@ const reviewSlice = createSlice({
       })
       .addCase(updateReview.fulfilled, (state, action) => {
         state.isLoading = false
-        const index = state.reviews.findIndex(review => review._id === action.payload.data._id)
+        // Handle the API response format: { status: "success", data: { review: {...} } }
+        const updatedReview = action.payload.data.review || action.payload.data
+        const index = state.reviews.findIndex(review => review._id === updatedReview._id)
         if (index !== -1) {
-          state.reviews[index] = action.payload.data
+          state.reviews[index] = updatedReview
         }
-        if (state.currentReview?._id === action.payload.data._id) {
-          state.currentReview = action.payload.data
+        if (state.currentReview?._id === updatedReview._id) {
+          state.currentReview = updatedReview
         }
         state.error = null
       })

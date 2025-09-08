@@ -21,6 +21,7 @@ import Button from '../components/ui/Button'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
 import TourMap from '../components/ui/TourMap'
 import SimpleMap from '../components/ui/SimpleMap'
+import ReviewsSection from '../components/ui/ReviewsSection'
 
 const TourDetailPage = () => {
   const { tourId } = useParams()
@@ -264,6 +265,9 @@ const TourDetailPage = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Reviews Section */}
+            <ReviewsSection tourId={tourId} tour={tour} />
           </div>
 
           {/* Sidebar */}
