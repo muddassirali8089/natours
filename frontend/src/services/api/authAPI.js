@@ -37,8 +37,8 @@ export const authAPI = {
   },
 
   // Reset password
-  resetPassword: async (token, password) => {
-    return apiClient.patch(`/users/resetPassword/${token}`, { password })
+  resetPassword: async (token, passwordData) => {
+    return apiClient.patch(`/users/resetPassword/${token}`, passwordData)
   },
 
   // Verify email

@@ -314,16 +314,130 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
   const resetToken = user.createPasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  const resetURL = `${req.protocol}://${req.get(
-    "host"
-  )}/api/v1/users/resetPassword/${resetToken}`;
-  const message = `Forgot your password? Submit a PATCH request with your new password and confirmPassword to: ${resetURL}\nIf you didn't request this, ignore this email.`;
+  // Create frontend URL for password reset
+  const frontendURL = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const resetURL = `${frontendURL}/reset-password/${resetToken}`;
+  
+  // Create HTML email template
+  const htmlMessage = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Reset Your Password - Natours</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+          background-color: #f4f4f4;
+        }
+        .container {
+          background-color: #ffffff;
+          padding: 30px;
+          border-radius: 10px;
+          box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        .logo {
+          font-size: 28px;
+          font-weight: bold;
+          color: #55c57a;
+          margin-bottom: 10px;
+        }
+        .title {
+          font-size: 24px;
+          color: #333;
+          margin-bottom: 20px;
+        }
+        .content {
+          margin-bottom: 30px;
+        }
+        .button {
+          display: inline-block;
+          background-color: #55c57a;
+          color: white;
+          padding: 15px 30px;
+          text-decoration: none;
+          border-radius: 5px;
+          font-weight: bold;
+          text-align: center;
+          margin: 20px 0;
+        }
+        .button:hover {
+          background-color: #2e864b;
+        }
+        .footer {
+          margin-top: 30px;
+          padding-top: 20px;
+          border-top: 1px solid #eee;
+          font-size: 14px;
+          color: #666;
+        }
+        .warning {
+          background-color: #fff3cd;
+          border: 1px solid #ffeaa7;
+          color: #856404;
+          padding: 15px;
+          border-radius: 5px;
+          margin: 20px 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <div class="logo">🏔️ Natours</div>
+          <h1 class="title">Reset Your Password</h1>
+        </div>
+        
+        <div class="content">
+          <p>Hello,</p>
+          <p>We received a request to reset your password for your Natours account.</p>
+          <p>Click the button below to reset your password:</p>
+          
+          <div style="text-align: center;">
+            <a href="${resetURL}" class="button">Reset Password</a>
+          </div>
+          
+          <div class="warning">
+            <strong>⚠️ Important:</strong> This link will expire in 10 minutes for security reasons.
+          </div>
+          
+          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace;">
+            ${resetURL}
+          </p>
+        </div>
+        
+        <div class="footer">
+          <p><strong>Didn't request this?</strong></p>
+          <p>If you didn't request a password reset, please ignore this email. Your password will remain unchanged.</p>
+          <p>For security reasons, please don't share this email with anyone.</p>
+          <hr>
+          <p>Best regards,<br>The Natours Team</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  // Plain text fallback
+  const textMessage = `Forgot your password? Click the link below to reset your password:\n\n${resetURL}\n\nThis link is valid for 10 minutes.\n\nIf you didn't request this, please ignore this email.`;
 
   try {
     await sendEmail({
       email: user.email,
-      subject: "Your password reset token (valid for 10 min)",
-      message,
+      subject: "Reset Your Password - Natours",
+      message: htmlMessage,
+      text: textMessage,
     });
 
     res.status(200).json({
@@ -370,7 +484,6 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   await user.save();
 
   // 4. Log in the user with new JWT
-
   createSendToken(user, 200, res);
 });
 

@@ -30,7 +30,7 @@ router.post("/login", loginLimiter, login);
 router.post("/logout", logout);
 router.patch("/verify-email/:token", verifyEmail);
 router.post("/forgotPassword", generalLimiter, forgotPassword);
-router.get("/resetPassword/:token", generalLimiter, resetPassword);
+router.patch("/resetPassword/:token", generalLimiter, resetPassword);
 
 // Protected routes - User can manage their own account
 router.get("/me", protect, getMe);

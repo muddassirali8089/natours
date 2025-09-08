@@ -14,6 +14,8 @@ import ToursPage from './pages/ToursPage'
 import TourDetailPage from './pages/TourDetailPage'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import ProfilePage from './pages/user/ProfilePage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminTours from './pages/admin/AdminTours'
@@ -54,6 +56,8 @@ function App() {
           {/* Auth Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           
           {/* Protected Routes */}
           <Route path="/profile" element={

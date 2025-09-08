@@ -17,7 +17,8 @@ export const sendEmail = async (options) => {
     from: "Muddassir Ali <no-reply@example.com>",
     to: options.email,
     subject: options.subject,
-    text: options.message,
+    text: options.text || options.message,
+    html: options.message, // Use HTML message if provided
   };
 
   // 3. Send email

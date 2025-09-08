@@ -96,6 +96,30 @@ export const updatePassword = createAsyncThunk(
   }
 )
 
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.forgotPassword(email)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to send reset email')
+    }
+  }
+)
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async ({ token, password, confirmPassword }, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.resetPassword(token, { password, confirmPassword })
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Password reset failed')
+    }
+  }
+)
+
 // Auth slice
 const authSlice = createSlice({
   name: 'auth',
@@ -205,6 +229,41 @@ const authSlice = createSlice({
         state.error = null
       })
       .addCase(updatePassword.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload
+      })
+      
+      // Forgot password
+      .addCase(forgotPassword.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(forgotPassword.fulfilled, (state) => {
+        state.isLoading = false
+        state.error = null
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload
+      })
+      
+      // Reset password
+      .addCase(resetPassword.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(resetPassword.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.user = action.payload.data.user
+        state.isAuthenticated = true
+        state.error = null
+        
+        // Store token in localStorage for API requests
+        if (action.payload.data.token) {
+          localStorage.setItem('token', action.payload.data.token)
+        }
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload
       })
