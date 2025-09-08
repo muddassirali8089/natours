@@ -119,13 +119,13 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.isLoading = false
-        state.user = action.payload.user
+        state.user = action.payload.data.user
         state.isAuthenticated = true
         state.error = null
         
         // Store token in localStorage for API requests
-        if (action.payload.token) {
-          localStorage.setItem('token', action.payload.token)
+        if (action.payload.data.token) {
+          localStorage.setItem('token', action.payload.data.token)
         }
       })
       .addCase(login.rejected, (state, action) => {
@@ -141,7 +141,7 @@ const authSlice = createSlice({
       })
       .addCase(signup.fulfilled, (state, action) => {
         state.isLoading = false
-        state.user = action.payload.user
+        state.user = action.payload.data.user
         state.isAuthenticated = true
         state.error = null
       })
@@ -169,7 +169,7 @@ const authSlice = createSlice({
       })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.isLoading = false
-        state.user = action.payload.user
+        state.user = action.payload.data.user
         state.isAuthenticated = true
         state.error = null
       })
@@ -187,7 +187,7 @@ const authSlice = createSlice({
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.isLoading = false
-        state.user = action.payload.user
+        state.user = action.payload.data.user
         state.error = null
       })
       .addCase(updateProfile.rejected, (state, action) => {

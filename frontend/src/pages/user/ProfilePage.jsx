@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
 import { 
@@ -13,9 +13,11 @@ import {
 import { 
   updateProfile,
   updatePassword,
+  getCurrentUser,
   selectUser,
   selectAuthLoading,
-  selectAuthError
+  selectAuthError,
+  selectIsAuthenticated
 } from '../../features/auth/authSlice'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -27,9 +29,18 @@ const ProfilePage = () => {
   const user = useSelector(selectUser)
   const isLoading = useSelector(selectAuthLoading)
   const error = useSelector(selectAuthError)
+  const isAuthenticated = useSelector(selectIsAuthenticated)
 
   const [activeTab, setActiveTab] = useState('profile')
   const [isEditing, setIsEditing] = useState(false)
+
+  // Load current user data when component mounts
+  useEffect(() => {
+    if (!user) {
+      dispatch(getCurrentUser())
+    }
+  }, [dispatch, user])
+
 
   const {
     register: registerProfile,
@@ -86,6 +97,7 @@ const ProfilePage = () => {
     })
   }
 
+
   const getRoleDisplayName = (role) => {
     switch (role) {
       case 'lead-guide': return 'Lead Guide'
@@ -101,12 +113,12 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-secondary-900">My Profile</h1>
-          <p className="text-secondary-600 mt-2">
+        <div className="mb-12 text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">My Profile</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             Manage your account settings and preferences
           </p>
         </div>
@@ -114,34 +126,34 @@ const ProfilePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center mb-6">
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardContent className="p-8">
+                <div className="text-center mb-8">
                   <div className="relative inline-block">
                     {user?.photo ? (
                       <img
-                        className="h-24 w-24 rounded-full object-cover mx-auto"
+                        className="h-32 w-32 rounded-full object-cover mx-auto shadow-lg border-4 border-white"
                         src={user.photo}
                         alt={user.name}
                       />
                     ) : (
-                      <div className="h-24 w-24 rounded-full bg-primary-100 flex items-center justify-center mx-auto">
-                        <User className="h-12 w-12 text-primary-600" />
+                      <div className="h-32 w-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto shadow-lg border-4 border-white">
+                        <User className="h-16 w-16 text-white" />
                       </div>
                     )}
-                    <button className="absolute bottom-0 right-0 bg-primary-600 text-white rounded-full p-2 hover:bg-primary-700 transition-colors">
-                      <Camera className="w-4 h-4" />
+                    <button className="absolute bottom-2 right-2 bg-blue-600 text-white rounded-full p-3 hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                      <Camera className="w-5 h-5" />
                     </button>
                   </div>
-                  <h3 className="text-lg font-semibold text-secondary-900 mt-4">
+                  <h3 className="text-xl font-bold text-gray-900 mt-6 mb-2">
                     {user?.name}
                   </h3>
-                  <p className="text-secondary-600">{user?.email}</p>
-                  <div className="flex flex-wrap justify-center gap-1 mt-2">
+                  <p className="text-gray-600 mb-4">{user?.email}</p>
+                  <div className="flex flex-wrap justify-center gap-2">
                     {user?.roles?.map((role) => (
                       <span
                         key={role}
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${roleColors[role]}`}
+                        className={`px-3 py-1 text-sm font-semibold rounded-full shadow-sm ${roleColors[role]}`}
                       >
                         {getRoleDisplayName(role)}
                       </span>
@@ -149,39 +161,39 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-                <nav className="space-y-2">
+                <nav className="space-y-3">
                   <button
                     onClick={() => setActiveTab('profile')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                       activeTab === 'profile'
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-100'
+                        ? 'bg-blue-100 text-blue-700 shadow-md'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm'
                     }`}
                   >
-                    <User className="w-4 h-4 inline mr-2" />
+                    <User className="w-5 h-5 inline mr-3" />
                     Profile Information
                   </button>
                   <button
                     onClick={() => setActiveTab('password')}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                       activeTab === 'password'
-                        ? 'bg-primary-100 text-primary-700'
-                        : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-100'
+                        ? 'bg-blue-100 text-blue-700 shadow-md'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm'
                     }`}
                   >
-                    <Lock className="w-4 h-4 inline mr-2" />
+                    <Lock className="w-5 h-5 inline mr-3" />
                     Change Password
                   </button>
                   {user?.roles?.includes('admin') && (
                     <button
                       onClick={() => setActiveTab('admin')}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                         activeTab === 'admin'
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-100'
+                          ? 'bg-blue-100 text-blue-700 shadow-md'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 hover:shadow-sm'
                       }`}
                     >
-                      <Shield className="w-4 h-4 inline mr-2" />
+                      <Shield className="w-5 h-5 inline mr-3" />
                       Admin Panel
                     </button>
                   )}
@@ -193,100 +205,103 @@ const ProfilePage = () => {
           {/* Main Content */}
           <div className="lg:col-span-3">
             {activeTab === 'profile' && (
-              <Card>
-                <CardHeader>
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
                   <div className="flex justify-between items-center">
-                    <CardTitle>Profile Information</CardTitle>
+                    <CardTitle className="text-2xl font-bold text-gray-900">Profile Information</CardTitle>
                     {!isEditing && (
-                      <Button variant="outline" onClick={handleEditClick}>
+                      <Button variant="outline" onClick={handleEditClick} className="bg-white hover:bg-gray-50 border-gray-300">
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Profile
                       </Button>
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmitProfile(onProfileSubmit)} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <Input
-                          label="Full Name"
-                          {...registerProfile('name', {
-                            required: 'Name is required',
-                            minLength: {
-                              value: 2,
-                              message: 'Name must be at least 2 characters',
-                            },
-                          })}
-                          error={profileErrors.name?.message}
-                          disabled={!isEditing}
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          label="Email Address"
-                          type="email"
-                          {...registerProfile('email', {
-                            required: 'Email is required',
-                            pattern: {
-                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                              message: 'Invalid email address',
-                            },
-                          })}
-                          error={profileErrors.email?.message}
-                          disabled={!isEditing}
-                        />
+                <CardContent className="p-8">
+                  {!isEditing ? (
+                    // Display current user data
+                    <div className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-3">
+                          <label className="block text-sm font-semibold text-gray-700">Full Name</label>
+                          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <p className="text-lg font-medium text-gray-900">{user?.name || 'Loading...'}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <label className="block text-sm font-semibold text-gray-700">Email Address</label>
+                          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <p className="text-lg font-medium text-gray-900">{user?.email || 'Loading...'}</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="flex items-center justify-between p-4 bg-secondary-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-secondary-900">Email Verification</p>
-                        <p className="text-sm text-secondary-600">
-                          {user?.emailVerified ? 'Your email is verified' : 'Please verify your email address'}
-                        </p>
+                  ) : (
+                    // Edit form
+                    <form onSubmit={handleSubmitProfile(onProfileSubmit)} className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                          <Input
+                            label="Full Name"
+                            {...registerProfile('name', {
+                              required: 'Name is required',
+                              minLength: {
+                                value: 2,
+                                message: 'Name must be at least 2 characters',
+                              },
+                            })}
+                            error={profileErrors.name?.message}
+                            disabled={!isEditing}
+                            className="bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Input
+                            label="Email Address"
+                            type="email"
+                            {...registerProfile('email', {
+                              required: 'Email is required',
+                              pattern: {
+                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                message: 'Invalid email address',
+                              },
+                            })}
+                            error={profileErrors.email?.message}
+                            disabled={!isEditing}
+                            className="bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        {user?.emailVerified ? (
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                            Verified
-                          </span>
-                        ) : (
-                          <Button variant="outline" size="sm">
-                            Resend Verification
+                      {isEditing && (
+                        <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                            className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
+                          >
+                            Cancel
                           </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {isEditing && (
-                      <div className="flex justify-end space-x-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleCancelEdit}
-                        >
-                          Cancel
-                        </Button>
-                        <Button type="submit" loading={isLoading}>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Changes
-                        </Button>
-                      </div>
-                    )}
-                  </form>
+                          <Button type="submit" loading={isLoading} className="px-6 py-2 bg-blue-600 hover:bg-blue-700">
+                            <Save className="w-4 h-4 mr-2" />
+                            Save Changes
+                          </Button>
+                        </div>
+                      )}
+                    </form>
+                  )}
                 </CardContent>
               </Card>
             )}
 
             {activeTab === 'password' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Change Password</CardTitle>
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+                  <CardTitle className="text-2xl font-bold text-gray-900">Change Password</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-6">
-                    <div>
+                <CardContent className="p-8">
+                  <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-8">
+                    <div className="space-y-2">
                       <Input
                         label="Current Password"
                         type="password"
@@ -294,9 +309,10 @@ const ProfilePage = () => {
                           required: 'Current password is required',
                         })}
                         error={passwordErrors.currentPassword?.message}
+                        className="bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Input
                         label="New Password"
                         type="password"
@@ -312,9 +328,10 @@ const ProfilePage = () => {
                           },
                         })}
                         error={passwordErrors.password?.message}
+                        className="bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
-                    <div>
+                    <div className="space-y-2">
                       <Input
                         label="Confirm New Password"
                         type="password"
@@ -325,11 +342,12 @@ const ProfilePage = () => {
                             'Passwords do not match',
                         })}
                         error={passwordErrors.confirmPassword?.message}
+                        className="bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                       />
                     </div>
 
-                    <div className="flex justify-end">
-                      <Button type="submit" loading={isLoading}>
+                    <div className="flex justify-end pt-6 border-t border-gray-200">
+                      <Button type="submit" loading={isLoading} className="px-6 py-2 bg-blue-600 hover:bg-blue-700">
                         <Lock className="w-4 h-4 mr-2" />
                         Update Password
                       </Button>
@@ -340,33 +358,37 @@ const ProfilePage = () => {
             )}
 
             {activeTab === 'admin' && user?.roles?.includes('admin') && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Admin Panel</CardTitle>
+              <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+                  <CardTitle className="text-2xl font-bold text-gray-900">Admin Panel</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <CardContent className="p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <a
                       href="/admin"
-                      className="p-4 border border-secondary-200 rounded-lg hover:bg-secondary-50 transition-colors"
+                      className="group p-6 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:shadow-md"
                     >
                       <div className="flex items-center">
-                        <Shield className="w-5 h-5 text-primary-600 mr-3" />
-                        <div>
-                          <p className="font-medium text-secondary-900">Dashboard</p>
-                          <p className="text-sm text-secondary-600">View admin dashboard</p>
+                        <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                          <Shield className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-semibold text-gray-900 group-hover:text-blue-700">Dashboard</p>
+                          <p className="text-sm text-gray-600">View admin dashboard</p>
                         </div>
                       </div>
                     </a>
                     <a
                       href="/admin/tours"
-                      className="p-4 border border-secondary-200 rounded-lg hover:bg-secondary-50 transition-colors"
+                      className="group p-6 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:shadow-md"
                     >
                       <div className="flex items-center">
-                        <User className="w-5 h-5 text-primary-600 mr-3" />
-                        <div>
-                          <p className="font-medium text-secondary-900">Manage Tours</p>
-                          <p className="text-sm text-secondary-600">Add, edit, or delete tours</p>
+                        <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                          <User className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-semibold text-gray-900 group-hover:text-green-700">Manage Tours</p>
+                          <p className="text-sm text-gray-600">Add, edit, or delete tours</p>
                         </div>
                       </div>
                     </a>
