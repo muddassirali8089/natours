@@ -45,12 +45,33 @@ const AdminTours = () => {
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    dispatch(fetchTours({
-      page: pagination.currentPage,
-      limit: pagination.toursPerPage,
-      ...filters
-    }))
-  }, [dispatch, pagination.currentPage, filters])
+    console.log('🔄 AdminTours: Fetching all tours (no parameters)')
+    dispatch(fetchTours()) // Fetch all tours without any parameters
+  }, [dispatch])
+
+  // Debug tours data
+  useEffect(() => {
+    console.log('📊 AdminTours: Tours data:', tours)
+    console.log('📊 AdminTours: Tours length:', tours?.length)
+    console.log('📊 AdminTours: Loading:', isLoading)
+    console.log('📊 AdminTours: Error:', error)
+    console.log('📊 AdminTours: Pagination:', pagination)
+  }, [tours, isLoading, error, pagination])
+
+  // Test direct API call to see if there are tours
+  useEffect(() => {
+    const testDirectAPI = async () => {
+      try {
+        console.log('🧪 Testing direct API call to /api/v1/tours')
+        const response = await fetch('http://localhost:8000/api/v1/tours')
+        const data = await response.json()
+        console.log('🧪 Direct API response:', data)
+      } catch (error) {
+        console.error('🧪 Direct API error:', error)
+      }
+    }
+    testDirectAPI()
+  }, [])
 
   const handleSearch = (e) => {
     e.preventDefault()

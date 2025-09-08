@@ -159,12 +159,18 @@ const tourSlice = createSlice({
         state.error = null
       })
       .addCase(fetchTours.fulfilled, (state, action) => {
+        console.log('🎯 fetchTours.fulfilled - Full payload:', action.payload)
+        console.log('🎯 fetchTours.fulfilled - Data structure:', {
+          data: action.payload.data,
+          results: action.payload.results,
+          status: action.payload.status
+        })
         state.isLoading = false
-        state.tours = action.payload.data.tours
+        state.tours = action.payload.data.tours || []
         state.pagination = {
           ...state.pagination,
-          totalTours: action.payload.results,
-          totalPages: Math.ceil(action.payload.results / state.pagination.toursPerPage),
+          totalTours: action.payload.results || 0,
+          totalPages: Math.ceil((action.payload.results || 0) / state.pagination.toursPerPage),
         }
         state.error = null
       })

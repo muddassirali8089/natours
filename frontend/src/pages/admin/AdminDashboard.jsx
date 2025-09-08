@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
 import { 
   Users, 
   MapPin, 
@@ -299,8 +300,8 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <a
-                href="/admin/tours"
+              <Link
+                to="/admin/tours"
                 className="p-4 border border-secondary-200 rounded-lg hover:bg-secondary-50 transition-colors"
               >
                 <div className="flex items-center">
@@ -310,10 +311,10 @@ const AdminDashboard = () => {
                     <p className="text-sm text-secondary-600">Add, edit, or delete tours</p>
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
-                href="/admin/users"
+              <Link
+                to="/admin/users"
                 className="p-4 border border-secondary-200 rounded-lg hover:bg-secondary-50 transition-colors"
               >
                 <div className="flex items-center">
@@ -323,10 +324,10 @@ const AdminDashboard = () => {
                     <p className="text-sm text-secondary-600">View and manage user accounts</p>
                   </div>
                 </div>
-              </a>
+              </Link>
 
-              <a
-                href="/admin/reviews"
+              <Link
+                to="/admin/reviews"
                 className="p-4 border border-secondary-200 rounded-lg hover:bg-secondary-50 transition-colors"
               >
                 <div className="flex items-center">
@@ -336,7 +337,7 @@ const AdminDashboard = () => {
                     <p className="text-sm text-secondary-600">Moderate user reviews</p>
                   </div>
                 </div>
-              </a>
+              </Link>
             </div>
           </CardContent>
         </Card>
