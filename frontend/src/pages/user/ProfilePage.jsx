@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
 import { 
   User,
   Mail,
@@ -481,8 +482,8 @@ const ProfilePage = () => {
                 </CardHeader>
                 <CardContent className="p-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <a
-                      href="/admin"
+                    <Link
+                      to="/admin"
                       className="group p-6 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:shadow-md"
                     >
                       <div className="flex items-center">
@@ -494,9 +495,9 @@ const ProfilePage = () => {
                           <p className="text-sm text-gray-600">View admin dashboard</p>
                         </div>
                       </div>
-                    </a>
-                    <a
-                      href="/admin/tours"
+                    </Link>
+                    <Link
+                      to="/admin/tours"
                       className="group p-6 border border-gray-200 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:shadow-md"
                     >
                       <div className="flex items-center">
@@ -508,7 +509,7 @@ const ProfilePage = () => {
                           <p className="text-sm text-gray-600">Add, edit, or delete tours</p>
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>

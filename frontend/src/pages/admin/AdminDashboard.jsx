@@ -32,9 +32,9 @@ const AdminDashboard = () => {
   const currentMonth = new Date().getMonth()
 
   // Calculate some basic stats
-  const totalUsers = users.length
-  const activeUsers = users.filter(user => user.active !== false).length
-  const verifiedUsers = users.filter(user => user.emailVerified).length
+  const totalUsers = users && Array.isArray(users) ? users.length : 0
+  const activeUsers = users && Array.isArray(users) ? users.filter(user => user.active !== false).length : 0
+  const verifiedUsers = users && Array.isArray(users) ? users.filter(user => user.emailVerified).length : 0
 
   const statsCards = [
     {
@@ -154,7 +154,7 @@ const AdminDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {monthlyPlan ? (
+              {monthlyPlan && Array.isArray(monthlyPlan) ? (
                 <div className="space-y-4">
                   {monthlyPlan.slice(0, 6).map((month, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
