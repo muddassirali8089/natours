@@ -3,6 +3,7 @@ import { reviewAPI } from '../../services/api/reviewAPI'
 
 const initialState = {
   reviews: [],
+  myReviews: [],
   currentReview: null,
   isLoading: false,
   error: null,
@@ -35,6 +36,18 @@ export const fetchTourReviews = createAsyncThunk(
       return response.data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch tour reviews')
+    }
+  }
+)
+
+export const fetchMyReviews = createAsyncThunk(
+  'reviews/fetchMyReviews',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await reviewAPI.getMyReviews()
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch my reviews')
     }
   }
 )
@@ -132,17 +145,28 @@ const reviewSlice = createSlice({
       })
       .addCase(fetchTourReviews.fulfilled, (state, action) => {
         state.isLoading = false
-        // Debug: Log the API response
-        console.log('fetchTourReviews.fulfilled - action.payload:', action.payload)
-        
         // Handle the API response format: { status: "success", results: number, data: { reviews: [...] } }
         const reviews = action.payload.data.reviews || action.payload.data
-        console.log('fetchTourReviews.fulfilled - extracted reviews:', reviews)
-        
         state.reviews = reviews
         state.error = null
       })
       .addCase(fetchTourReviews.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload
+      })
+      
+      // Fetch my reviews
+      .addCase(fetchMyReviews.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(fetchMyReviews.fulfilled, (state, action) => {
+        state.isLoading = false
+        // Handle the API response format: { status: "success", results: number, data: { reviews: [...] } }
+        state.myReviews = action.payload.data.reviews || action.payload.data
+        state.error = null
+      })
+      .addCase(fetchMyReviews.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload
       })
@@ -227,6 +251,7 @@ export const { clearError, clearCurrentReview, setPage } = reviewSlice.actions
 
 // Selectors
 export const selectReviews = (state) => state.reviews.reviews
+export const selectMyReviews = (state) => state.reviews.myReviews
 export const selectCurrentReview = (state) => state.reviews.currentReview
 export const selectReviewsLoading = (state) => state.reviews.isLoading
 export const selectReviewsError = (state) => state.reviews.error

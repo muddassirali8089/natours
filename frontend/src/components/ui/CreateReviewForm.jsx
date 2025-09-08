@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
 import { createReview, selectReviewsLoading, selectReviewsError } from '../../features/review/reviewSlice'
-import { selectIsAuthenticated } from '../../features/auth/authSlice'
 import { Card, CardContent, CardHeader, CardTitle } from './Card'
 import Button from './Button'
 import LoadingSpinner from './LoadingSpinner'
@@ -13,7 +12,6 @@ const CreateReviewForm = ({ tourId, onReviewCreated }) => {
   const dispatch = useDispatch()
   const isLoading = useSelector(selectReviewsLoading)
   const error = useSelector(selectReviewsError)
-  const isAuthenticated = useSelector(selectIsAuthenticated)
   
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
@@ -49,7 +47,12 @@ const CreateReviewForm = ({ tourId, onReviewCreated }) => {
         onReviewCreated()
       }
     } catch (error) {
-      toast.error(error || 'Failed to submit review')
+      // Handle specific error cases
+      if (error.includes('duplicate key error') || error.includes('E11000')) {
+        toast.error('You have already reviewed this tour. Only one review per tour is allowed.')
+      } else {
+        toast.error(error || 'Failed to submit review')
+      }
     }
   }
 
@@ -78,28 +81,7 @@ const CreateReviewForm = ({ tourId, onReviewCreated }) => {
     ))
   }
 
-  if (!isAuthenticated) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <MessageCircle className="w-5 h-5 mr-2" />
-            Write a Review
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Sign in to write a review</h3>
-            <p className="text-gray-500 mb-4">Share your experience with other travelers</p>
-            <Button as="a" href="/login">
-              Sign In
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
+  // Authentication check is now handled in parent component
 
   return (
     <Card>

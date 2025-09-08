@@ -13,6 +13,11 @@ export const reviewAPI = {
     return apiClient.get(`/tours/${tourId}/reviews`)
   },
 
+  // Get reviews by current user
+  getMyReviews: async () => {
+    return apiClient.get('/reviews/my-reviews')
+  },
+
   // Get single review
   getReview: async (reviewId) => {
     return apiClient.get(`/reviews/${reviewId}`)

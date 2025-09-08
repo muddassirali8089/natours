@@ -11,6 +11,7 @@ import {
 } from "../controllers/authContrller.js";
 import {
   getMe,
+  getMyReviews,
   deleteMe,
   getAllUsers,
   updateMe,
@@ -33,6 +34,7 @@ router.get("/resetPassword/:token", generalLimiter, resetPassword);
 
 // Protected routes - User can manage their own account
 router.get("/me", protect, getMe);
+router.get("/my-reviews", protect, getMyReviews);
 router.patch("/updateMyPassword", protect, updateMyPassword);
 router.patch("/updateMe", protect, updateMe);
 router.delete("/deleteMe", protect, deleteMe);

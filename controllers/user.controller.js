@@ -24,6 +24,23 @@ export const getMe = catchAsync(async (req, res, next) => {
   });
 });
 
+// ✅ Get current user's reviews
+export const getMyReviews = catchAsync(async (req, res, next) => {
+  const Review = (await import('../models/review.model.js')).default;
+  
+  const reviews = await Review.find({ user: req.user.id })
+    .populate('tour', 'name imageCover')
+    .sort({ createdAt: -1 });
+  
+  res.status(200).json({
+    status: 'success',
+    results: reviews.length,
+    data: {
+      reviews
+    }
+  });
+});
+
 export const getAllUsers = catchAsync(async (req, res, next) => {
   const users = await User.find();
 

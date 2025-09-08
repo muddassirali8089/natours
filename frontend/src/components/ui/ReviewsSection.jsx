@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { fetchTourReviews, selectReviews, selectReviewsLoading, selectReviewsError } from '../../features/review/reviewSlice'
+import { fetchTourReviews, fetchMyReviews, selectReviews, selectMyReviews, selectReviewsLoading, selectReviewsError } from '../../features/review/reviewSlice'
+import { selectUser, selectIsAuthenticated } from '../../features/auth/authSlice'
 import { Card, CardContent, CardHeader, CardTitle } from './Card'
 import Button from './Button'
 import LoadingSpinner from './LoadingSpinner'
@@ -11,8 +12,11 @@ import { Star, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
 const ReviewsSection = ({ tourId, tour }) => {
   const dispatch = useDispatch()
   const reviews = useSelector(selectReviews)
+  const myReviews = useSelector(selectMyReviews)
   const isLoading = useSelector(selectReviewsLoading)
   const error = useSelector(selectReviewsError)
+  const user = useSelector(selectUser)
+  const isAuthenticated = useSelector(selectIsAuthenticated)
   
   const [showAllReviews, setShowAllReviews] = useState(false)
   const [hasLoadedReviews, setHasLoadedReviews] = useState(false)
@@ -24,6 +28,13 @@ const ReviewsSection = ({ tourId, tour }) => {
       setHasLoadedReviews(true)
     }
   }, [dispatch, tourId, hasLoadedReviews])
+
+  // Fetch user's reviews when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchMyReviews())
+    }
+  }, [dispatch, isAuthenticated])
 
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, index) => (
@@ -41,13 +52,64 @@ const ReviewsSection = ({ tourId, tour }) => {
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3)
   const hasMoreReviews = reviews.length > 3
 
-  // Debug: Log reviews data
+  // Check if current user already has a review for this tour
+  // Method 1: Check in current tour reviews (using the API data structure you provided)
+  const userHasReviewInTour = isAuthenticated && reviews.some(review => {
+    // From your API data: review.user._id = "68beb6957668301d2c050b3d"
+    // We need to get the current user ID from localStorage or auth state
+    const reviewUserId = review.user?._id || review.user
+    const token = localStorage.getItem('token')
+    if (!token) return false
+    
+    // Decode JWT to get user ID (simple approach)
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      const currentUserId = payload.id || payload._id
+      return reviewUserId && currentUserId && reviewUserId.toString() === currentUserId.toString()
+    } catch (error) {
+      console.error('Error decoding token:', error)
+      return false
+    }
+  })
+
+  // Method 2: Check in user's reviews (more reliable)
+  const userHasReviewInMyReviews = isAuthenticated && myReviews.some(review => {
+    const reviewTourId = review.tour?._id || review.tour
+    return reviewTourId && reviewTourId.toString() === tourId
+  })
+
+  // Use either method (prefer myReviews as it's more reliable)
+  const userHasReview = userHasReviewInMyReviews || userHasReviewInTour
+
+  // Debug: Log reviews data to understand the structure
+  console.log('ReviewsSection - tourId:', tourId)
   console.log('ReviewsSection - reviews:', reviews)
-  console.log('ReviewsSection - displayedReviews:', displayedReviews)
+  console.log('ReviewsSection - myReviews:', myReviews)
+  console.log('ReviewsSection - current user:', user)
+  console.log('ReviewsSection - userHasReviewInTour:', userHasReviewInTour)
+  console.log('ReviewsSection - userHasReviewInMyReviews:', userHasReviewInMyReviews)
+  console.log('ReviewsSection - userHasReview:', userHasReview)
+  console.log('ReviewsSection - isAuthenticated:', isAuthenticated)
+  
+  // Debug token info
+  const token = localStorage.getItem('token')
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      console.log('ReviewsSection - token payload:', payload)
+    } catch (error) {
+      console.error('ReviewsSection - token decode error:', error)
+    }
+  } else {
+    console.log('ReviewsSection - no token found')
+  }
 
   const handleReviewCreated = () => {
-    // Refresh reviews after creating a new one
+    // Refresh both tour reviews and user's reviews after creating a new one
     dispatch(fetchTourReviews(tourId))
+    if (isAuthenticated) {
+      dispatch(fetchMyReviews())
+    }
     setShowCreateForm(false)
   }
 
@@ -117,25 +179,29 @@ const ReviewsSection = ({ tourId, tour }) => {
       </CardHeader>
       
       <CardContent>
-        {/* Create Review Form */}
-        {showCreateForm ? (
-          <div className="mb-6">
-            <CreateReviewForm 
-              tourId={tourId} 
-              onReviewCreated={handleReviewCreated}
-            />
-          </div>
-        ) : (
-          <div className="text-center mb-6">
-            <Button 
-              onClick={() => setShowCreateForm(true)}
-              variant="outline"
-              className="w-full"
-            >
-              <MessageCircle className="w-4 h-4 mr-2" />
-              Write a Review
-            </Button>
-          </div>
+        {/* Create Review Form - Only show for authenticated users who haven't reviewed */}
+        {isAuthenticated && !userHasReview && (
+          <>
+            {showCreateForm ? (
+              <div className="mb-6">
+                <CreateReviewForm 
+                  tourId={tourId} 
+                  onReviewCreated={handleReviewCreated}
+                />
+              </div>
+            ) : (
+              <div className="text-center mb-6">
+                <Button 
+                  onClick={() => setShowCreateForm(true)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  Write a Review
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         {reviews.length === 0 ? (

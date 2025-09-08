@@ -2,9 +2,6 @@ import { Star, User, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 
 const ReviewCard = ({ review }) => {
-  // Debug: Log review data to console
-  console.log('ReviewCard - review data:', review)
-  
   // Safety check for review data
   if (!review) {
     return <div className="p-4 text-center text-gray-500">Invalid review data</div>
