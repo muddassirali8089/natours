@@ -1,4 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { getCurrentUser, selectIsAuthenticated } from './features/auth/authSlice'
 
 // Layout Components
 import Navbar from './components/layout/Navbar'
@@ -22,6 +25,21 @@ import NotFoundPage from './pages/NotFoundPage'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 function App() {
+  const dispatch = useDispatch()
+  const isAuthenticated = useSelector(selectIsAuthenticated)
+
+  // Initialize authentication on app start
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    if (token && !isAuthenticated) {
+      // Try to get current user to validate token
+      dispatch(getCurrentUser()).catch(() => {
+        // If token is invalid, clear it
+        localStorage.removeItem('token')
+      })
+    }
+  }, [dispatch, isAuthenticated])
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />

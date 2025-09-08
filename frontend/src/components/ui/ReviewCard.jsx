@@ -2,6 +2,14 @@ import { Star, User, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 
 const ReviewCard = ({ review }) => {
+  // Debug: Log review data to console
+  console.log('ReviewCard - review data:', review)
+  
+  // Safety check for review data
+  if (!review) {
+    return <div className="p-4 text-center text-gray-500">Invalid review data</div>
+  }
+  
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star
@@ -41,20 +49,27 @@ const ReviewCard = ({ review }) => {
                 {review.user?.name || 'Anonymous'}
               </h4>
               <div className="flex items-center space-x-1">
-                {renderStars(review.rating)}
+                {renderStars(review.rating || 0)}
                 <span className="text-sm text-gray-500 ml-1">
-                  {review.rating}/5
+                  {review.rating || 0}/5
                 </span>
               </div>
             </div>
             <div className="flex items-center text-xs text-gray-500">
               <Calendar className="w-3 h-3 mr-1" />
-              {format(new Date(review.createdAt), 'MMM dd, yyyy')}
+              {review.createdAt ? (() => {
+                try {
+                  const date = new Date(review.createdAt)
+                  return isNaN(date.getTime()) ? 'Unknown date' : format(date, 'MMM dd, yyyy')
+                } catch (error) {
+                  return 'Unknown date'
+                }
+              })() : 'Unknown date'}
             </div>
           </div>
           
           <p className="text-sm text-gray-700 leading-relaxed">
-            {review.review}
+            {review.review || 'No review text available'}
           </p>
         </div>
       </div>

@@ -132,8 +132,14 @@ const reviewSlice = createSlice({
       })
       .addCase(fetchTourReviews.fulfilled, (state, action) => {
         state.isLoading = false
+        // Debug: Log the API response
+        console.log('fetchTourReviews.fulfilled - action.payload:', action.payload)
+        
         // Handle the API response format: { status: "success", results: number, data: { reviews: [...] } }
-        state.reviews = action.payload.data.reviews || action.payload.data
+        const reviews = action.payload.data.reviews || action.payload.data
+        console.log('fetchTourReviews.fulfilled - extracted reviews:', reviews)
+        
+        state.reviews = reviews
         state.error = null
       })
       .addCase(fetchTourReviews.rejected, (state, action) => {

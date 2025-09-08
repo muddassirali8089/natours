@@ -8,6 +8,15 @@ const initialState = {
   error: null,
 }
 
+// Initialize auth state from localStorage
+const initializeAuth = () => {
+  const token = localStorage.getItem('token')
+  return {
+    ...initialState,
+    isAuthenticated: !!token,
+  }
+}
+
 // Async thunks
 export const login = createAsyncThunk(
   'auth/login',
@@ -37,9 +46,15 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
+      // Clear token from localStorage first
+      localStorage.removeItem('token')
+      
+      // Call logout API to clear server-side cookies
       await authAPI.logout()
       return null
     } catch (error) {
+      // Even if API call fails, clear local storage
+      localStorage.removeItem('token')
       return rejectWithValue(error.response?.data?.message || 'Logout failed')
     }
   }
@@ -84,7 +99,7 @@ export const updatePassword = createAsyncThunk(
 // Auth slice
 const authSlice = createSlice({
   name: 'auth',
-  initialState,
+  initialState: initializeAuth(),
   reducers: {
     clearError: (state) => {
       state.error = null
@@ -107,6 +122,11 @@ const authSlice = createSlice({
         state.user = action.payload.user
         state.isAuthenticated = true
         state.error = null
+        
+        // Store token in localStorage for API requests
+        if (action.payload.token) {
+          localStorage.setItem('token', action.payload.token)
+        }
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false
@@ -132,6 +152,12 @@ const authSlice = createSlice({
       
       // Logout
       .addCase(logout.fulfilled, (state) => {
+        state.user = null
+        state.isAuthenticated = false
+        state.error = null
+      })
+      .addCase(logout.rejected, (state) => {
+        // Even if logout API fails, clear the local state
         state.user = null
         state.isAuthenticated = false
         state.error = null

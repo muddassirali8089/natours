@@ -41,6 +41,10 @@ const ReviewsSection = ({ tourId, tour }) => {
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3)
   const hasMoreReviews = reviews.length > 3
 
+  // Debug: Log reviews data
+  console.log('ReviewsSection - reviews:', reviews)
+  console.log('ReviewsSection - displayedReviews:', displayedReviews)
+
   const handleReviewCreated = () => {
     // Refresh reviews after creating a new one
     dispatch(fetchTourReviews(tourId))
@@ -144,8 +148,8 @@ const ReviewsSection = ({ tourId, tour }) => {
           <div className="space-y-4">
             {/* Reviews List */}
             <div className="space-y-4">
-              {displayedReviews.map((review) => (
-                <ReviewCard key={review._id} review={review} />
+              {Array.isArray(displayedReviews) && displayedReviews.map((review, index) => (
+                <ReviewCard key={review._id || `review-${index}`} review={review} />
               ))}
             </div>
 

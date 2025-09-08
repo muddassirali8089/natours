@@ -2,6 +2,7 @@ import express from "express";
 import {
   signup,
   login,
+  logout,
   forgotPassword,
   resetPassword,
   updateMyPassword,
@@ -9,6 +10,7 @@ import {
   restrictTo,
 } from "../controllers/authContrller.js";
 import {
+  getMe,
   deleteMe,
   getAllUsers,
   updateMe,
@@ -24,11 +26,13 @@ const router = express.Router();
 // Authentication routes (no protection needed)
 router.post("/signup", signup);
 router.post("/login", loginLimiter, login);
+router.post("/logout", logout);
 router.patch("/verify-email/:token", verifyEmail);
 router.post("/forgotPassword", generalLimiter, forgotPassword);
 router.get("/resetPassword/:token", generalLimiter, resetPassword);
 
 // Protected routes - User can manage their own account
+router.get("/me", protect, getMe);
 router.patch("/updateMyPassword", protect, updateMyPassword);
 router.patch("/updateMe", protect, updateMe);
 router.delete("/deleteMe", protect, deleteMe);

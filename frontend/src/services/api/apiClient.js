@@ -10,10 +10,15 @@ class ApiClient {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`
     
+    // Get token from localStorage (if available)
+    const token = localStorage.getItem('token')
+    
     const config = {
       credentials: 'include', // Include cookies for authentication
       headers: {
         'Content-Type': 'application/json',
+        // Add Authorization header if token exists
+        ...(token && { 'Authorization': `Bearer ${token}` }),
         ...options.headers,
       },
       ...options,
