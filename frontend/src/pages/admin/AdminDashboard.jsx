@@ -9,10 +9,8 @@ import {
   DollarSign,
   Activity
 } from 'lucide-react'
-import { fetchTourStats, fetchMonthlyPlan } from '../../features/tour/tourSlice'
-import { fetchUsers } from '../../features/user/userSlice'
-import { selectTourStats, selectMonthlyPlan } from '../../features/tour/tourSlice'
-import { selectUsers } from '../../features/user/userSlice'
+import { fetchTourStats, fetchMonthlyPlan, selectTourStats, selectMonthlyPlan, selectToursLoading, selectToursError } from '../../features/tour/tourSlice'
+import { fetchUsers, selectUsers, selectUsersLoading, selectUsersError } from '../../features/user/userSlice'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
@@ -21,6 +19,10 @@ const AdminDashboard = () => {
   const stats = useSelector(selectTourStats)
   const monthlyPlan = useSelector(selectMonthlyPlan)
   const users = useSelector(selectUsers)
+  const toursLoading = useSelector(selectToursLoading)
+  const toursError = useSelector(selectToursError)
+  const usersLoading = useSelector(selectUsersLoading)
+  const usersError = useSelector(selectUsersError)
 
   useEffect(() => {
     dispatch(fetchTourStats())
@@ -28,18 +30,46 @@ const AdminDashboard = () => {
     dispatch(fetchUsers())
   }, [dispatch])
 
+  // Console log API responses for debugging
+  useEffect(() => {
+    console.log('🔍 AdminDashboard API Responses:')
+    console.log('📊 Tour Stats (raw):', stats)
+    console.log('📊 Tour Stats type:', typeof stats, 'isArray:', Array.isArray(stats))
+    console.log('📅 Monthly Plan (raw):', monthlyPlan)
+    console.log('👥 Users (raw):', users)
+    console.log('👥 Users type:', typeof users, 'isArray:', Array.isArray(users))
+    console.log('👥 Users length:', users?.length)
+  }, [stats, monthlyPlan, users])
+
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth()
 
-  // Calculate some basic stats
+  // Calculate stats from API data
   const totalUsers = users && Array.isArray(users) ? users.length : 0
   const activeUsers = users && Array.isArray(users) ? users.filter(user => user.active !== false).length : 0
   const verifiedUsers = users && Array.isArray(users) ? users.filter(user => user.emailVerified).length : 0
+  
+  // Calculate tour stats from the stats array
+  // Note: stats comes from Redux as the actual data array, not wrapped in data object
+  const totalTours = stats && Array.isArray(stats) ? stats.reduce((sum, stat) => sum + stat.numTours, 0) : 0
+  const totalReviews = stats && Array.isArray(stats) ? stats.reduce((sum, stat) => sum + stat.numRating, 0) : 0
+  const avgRating = stats && Array.isArray(stats) && totalReviews > 0 
+    ? (stats.reduce((sum, stat) => sum + (stat.avgRating * stat.numRating), 0) / totalReviews).toFixed(1)
+    : '0.0'
+
+  // Debug calculations
+  console.log('🧮 Calculated Stats:')
+  console.log('Total Tours:', totalTours)
+  console.log('Total Users:', totalUsers)
+  console.log('Total Reviews:', totalReviews)
+  console.log('Average Rating:', avgRating)
+  console.log('Active Users:', activeUsers)
+  console.log('Verified Users:', verifiedUsers)
 
   const statsCards = [
     {
       title: 'Total Tours',
-      value: stats?.totalTours || 0,
+      value: totalTours,
       icon: MapPin,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
@@ -53,14 +83,14 @@ const AdminDashboard = () => {
     },
     {
       title: 'Average Rating',
-      value: stats?.avgRating?.toFixed(1) || '0.0',
+      value: avgRating,
       icon: Star,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-100',
     },
     {
       title: 'Total Reviews',
-      value: stats?.totalReviews || 0,
+      value: totalReviews,
       icon: TrendingUp,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
@@ -83,6 +113,44 @@ const AdminDashboard = () => {
       color: 'text-blue-600',
     },
   ]
+
+  // Show loading state if data is still loading
+  if (toursLoading || usersLoading) {
+    return (
+      <div className="min-h-screen bg-secondary-50 flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading dashboard data..." />
+      </div>
+    )
+  }
+
+  // Show error state if there are errors
+  if (toursError || usersError) {
+    return (
+      <div className="min-h-screen bg-secondary-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Dashboard</h1>
+            {toursError && (
+              <p className="text-red-600 mb-2">Tour data error: {toursError}</p>
+            )}
+            {usersError && (
+              <p className="text-red-600 mb-4">User data error: {usersError}</p>
+            )}
+            <button
+              onClick={() => {
+                dispatch(fetchTourStats())
+                dispatch(fetchMonthlyPlan(new Date().getFullYear()))
+                dispatch(fetchUsers())
+              }}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-secondary-50">
@@ -114,7 +182,7 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* User Statistics */}
           <Card>
             <CardHeader>
@@ -145,6 +213,47 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Tour Difficulty Breakdown */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Activity className="w-5 h-5 mr-2" />
+                Tour Difficulty
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stats && Array.isArray(stats) && stats.length > 0 ? (
+                <div className="space-y-4">
+                  {stats.map((stat, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-secondary-900 capitalize">
+                          {stat._id.toLowerCase()}
+                        </p>
+                        <p className="text-xs text-secondary-600">
+                          {stat.numTours} tours • {stat.numRating} reviews
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-primary-600">
+                          {stat.avgRating.toFixed(1)}★
+                        </p>
+                        <p className="text-xs text-secondary-600">
+                          ${stat.avgPrice.toFixed(0)} avg
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No tour statistics available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Monthly Plan */}
           <Card>
             <CardHeader>
@@ -154,27 +263,29 @@ const AdminDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {monthlyPlan && Array.isArray(monthlyPlan) ? (
+              {monthlyPlan && monthlyPlan.monthlyStats && Array.isArray(monthlyPlan.monthlyStats) && monthlyPlan.monthlyStats.length > 0 ? (
                 <div className="space-y-4">
-                  {monthlyPlan.slice(0, 6).map((month, index) => (
+                  {monthlyPlan.monthlyStats.slice(0, 6).map((month, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-secondary-50 rounded-lg">
                       <div>
                         <p className="text-sm font-medium text-secondary-900">
-                          {new Date(currentYear, index).toLocaleString('default', { month: 'long' })}
+                          {new Date(currentYear, month.month - 1).toLocaleString('default', { month: 'long' })}
                         </p>
-                        <p className="text-xs text-secondary-600">{month.numTours} tours</p>
+                        <p className="text-xs text-secondary-600">{month.numTourStarts} tour starts</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-bold text-primary-600">
-                          {month.numTours}
+                          {month.numTourStarts}
                         </p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex justify-center py-8">
-                  <LoadingSpinner size="md" text="Loading monthly plan..." />
+                <div className="text-center py-8">
+                  <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No tour starts planned for {currentYear}</p>
+                  <p className="text-sm text-gray-500 mt-2">Tours will appear here when start dates are added</p>
                 </div>
               )}
             </CardContent>

@@ -99,11 +99,11 @@ const userSlice = createSlice({
       })
       .addCase(fetchUsers.fulfilled, (state, action) => {
         state.isLoading = false
-        state.users = action.payload.data
+        state.users = action.payload.data.users
         state.pagination = {
           ...state.pagination,
-          totalUsers: action.payload.total,
-          totalPages: Math.ceil(action.payload.total / state.pagination.usersPerPage),
+          totalUsers: action.payload.results,
+          totalPages: Math.ceil(action.payload.results / state.pagination.usersPerPage),
         }
         state.error = null
       })

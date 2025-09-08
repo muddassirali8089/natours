@@ -249,7 +249,7 @@ const tourSlice = createSlice({
       
       // Fetch tour stats
       .addCase(fetchTourStats.fulfilled, (state, action) => {
-        state.stats = action.payload.data
+        state.stats = action.payload.data.stats
       })
       
       // Fetch monthly plan
