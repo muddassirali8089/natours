@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { 
   Users, 
   MapPin, 
@@ -8,7 +8,9 @@ import {
   TrendingUp, 
   Calendar,
   DollarSign,
-  Activity
+  Activity,
+  ArrowLeft,
+  Home
 } from 'lucide-react'
 import { fetchTourStats, fetchMonthlyPlan, selectTourStats, selectMonthlyPlan, selectToursLoading, selectToursError } from '../../features/tour/tourSlice'
 import { fetchUsers, selectUsers, selectUsersLoading, selectUsersError } from '../../features/user/userSlice'
@@ -17,6 +19,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
 const AdminDashboard = () => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const stats = useSelector(selectTourStats)
   const monthlyPlan = useSelector(selectMonthlyPlan)
   const users = useSelector(selectUsers)
@@ -158,10 +161,21 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-secondary-900">Admin Dashboard</h1>
-          <p className="text-secondary-600 mt-2">
-            Welcome to your admin panel. Here's an overview of your platform.
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-secondary-900">Admin Dashboard</h1>
+              <p className="text-secondary-600 mt-2">
+                Welcome to your admin panel. Here's an overview of your platform.
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Back to Site
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}

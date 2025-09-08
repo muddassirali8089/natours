@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { 
   Users, 
   Search,
@@ -11,7 +12,8 @@ import {
   UserX,
   Trash2,
   Eye,
-  MoreVertical
+  MoreVertical,
+  ArrowLeft
 } from 'lucide-react'
 import { 
   fetchUsers, 
@@ -29,6 +31,7 @@ import toast from 'react-hot-toast'
 
 const AdminUsers = () => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const users = useSelector(selectUsers)
   const isLoading = useSelector(selectUsersLoading)
   const error = useSelector(selectUsersError)
@@ -151,9 +154,19 @@ const AdminUsers = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-              <p className="text-gray-600 mt-2">Manage all users in your system</p>
+            <div className="flex items-center">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/admin')}
+                className="mr-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+                <p className="text-gray-600 mt-2">Manage all users in your system</p>
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { 
   Plus, 
   Edit, 
@@ -11,7 +12,8 @@ import {
   Calendar,
   DollarSign,
   Star,
-  Users
+  Users,
+  ArrowLeft
 } from 'lucide-react'
 import { 
   fetchTours, 
@@ -33,6 +35,7 @@ import toast from 'react-hot-toast'
 
 const AdminTours = () => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const tours = useSelector(selectTours)
   const pagination = useSelector(selectToursPagination)
   const filters = useSelector(selectToursFilters)
@@ -144,9 +147,19 @@ const AdminTours = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Tour Management</h1>
-              <p className="text-gray-600 mt-2">Manage all tours in your system</p>
+            <div className="flex items-center">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/admin')}
+                className="mr-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Tour Management</h1>
+                <p className="text-gray-600 mt-2">Manage all tours in your system</p>
+              </div>
             </div>
             <Button className="bg-blue-600 hover:bg-blue-700">
               <Plus className="w-4 h-4 mr-2" />
