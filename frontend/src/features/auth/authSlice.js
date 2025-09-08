@@ -148,8 +148,8 @@ const authSlice = createSlice({
         state.error = null
         
         // Store token in localStorage for API requests
-        if (action.payload.data.token) {
-          localStorage.setItem('token', action.payload.data.token)
+        if (action.payload.token) {
+          localStorage.setItem('token', action.payload.token)
         }
       })
       .addCase(login.rejected, (state, action) => {
@@ -200,7 +200,13 @@ const authSlice = createSlice({
       .addCase(getCurrentUser.rejected, (state, action) => {
         state.isLoading = false
         state.user = null
-        state.isAuthenticated = false
+        // Only set isAuthenticated to false if the error is 401 (unauthorized)
+        // This prevents clearing auth state for network errors, etc.
+        if (action.payload && action.payload.includes('401')) {
+          state.isAuthenticated = false
+          // Clear token from localStorage if user is not authenticated
+          localStorage.removeItem('token')
+        }
         state.error = action.payload
       })
       
@@ -224,9 +230,19 @@ const authSlice = createSlice({
         state.isLoading = true
         state.error = null
       })
-      .addCase(updatePassword.fulfilled, (state) => {
+      .addCase(updatePassword.fulfilled, (state, action) => {
         state.isLoading = false
         state.error = null
+        
+        // Update user data and token after password change
+        if (action.payload.data.user) {
+          state.user = action.payload.data.user
+        }
+        
+        // Store new token in localStorage
+        if (action.payload.token) {
+          localStorage.setItem('token', action.payload.token)
+        }
       })
       .addCase(updatePassword.rejected, (state, action) => {
         state.isLoading = false
@@ -259,8 +275,8 @@ const authSlice = createSlice({
         state.error = null
         
         // Store token in localStorage for API requests
-        if (action.payload.data.token) {
-          localStorage.setItem('token', action.payload.data.token)
+        if (action.payload.token) {
+          localStorage.setItem('token', action.payload.token)
         }
       })
       .addCase(resetPassword.rejected, (state, action) => {

@@ -7,6 +7,7 @@ const Input = forwardRef(({
   helperText,
   className = '',
   required = false,
+  rightIcon,
   ...props
 }, ref) => {
   return (
@@ -18,15 +19,24 @@ const Input = forwardRef(({
         </label>
       )}
       
-      <input
-        ref={ref}
-        className={clsx(
-          'input',
-          error && 'border-red-500 focus:ring-red-500 focus:border-red-500',
-          className
+      <div className="relative">
+        <input
+          ref={ref}
+          className={clsx(
+            'input',
+            error && 'border-red-500 focus:ring-red-500 focus:border-red-500',
+            rightIcon && 'pr-10',
+            className
+          )}
+          {...props}
+        />
+        
+        {rightIcon && (
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            {rightIcon}
+          </div>
         )}
-        {...props}
-      />
+      </div>
       
       {error && (
         <p className="text-sm text-red-600">{error}</p>

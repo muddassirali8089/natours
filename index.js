@@ -30,8 +30,14 @@ dotenv.config(); // Load config.env
 const app = express();
 app.use(helmet());
 
-// ✅ Allow all origins (development only)
-app.use(cors())
+// ✅ CORS configuration for development
+app.use(cors({
+  origin: 'http://localhost:3000', // Frontend URL
+  credentials: true, // Allow credentials (cookies, authorization headers)
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200 // For legacy browser support
+}))
 app.use(express.json({ limit: "10kb" }));
 
 

@@ -504,6 +504,14 @@ export const updateMyPassword = catchAsync(async (req, res, next) => {
   // 3. Set new password
   user.password = req.body.newPassword;
   user.confirmPassword = req.body.confirmPassword;
+  
+  // Validate the password before saving
+  try {
+    await user.validate();
+  } catch (validationError) {
+    return next(new AppError(validationError.message, 400));
+  }
+  
   await user.save(); // triggers password hashing middleware
 
   // 4. Sign new JWT and send

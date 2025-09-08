@@ -8,7 +8,9 @@ import {
   Save,
   Edit,
   Lock,
-  Shield
+  Shield,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { 
   updateProfile,
@@ -33,13 +35,16 @@ const ProfilePage = () => {
 
   const [activeTab, setActiveTab] = useState('profile')
   const [isEditing, setIsEditing] = useState(false)
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Load current user data when component mounts
   useEffect(() => {
-    if (!user) {
+    if (!user && isAuthenticated) {
       dispatch(getCurrentUser())
     }
-  }, [dispatch, user])
+  }, [dispatch, user, isAuthenticated])
 
 
   const {
@@ -59,6 +64,7 @@ const ProfilePage = () => {
     handleSubmit: handleSubmitPassword,
     formState: { errors: passwordErrors },
     reset: resetPassword,
+    watch: watchPassword,
   } = useForm()
 
   const onProfileSubmit = async (data) => {
@@ -73,7 +79,21 @@ const ProfilePage = () => {
 
   const onPasswordSubmit = async (data) => {
     try {
-      await dispatch(updatePassword(data)).unwrap()
+      // Check if user is authenticated
+      if (!isAuthenticated || !user) {
+        toast.error('Please log in to update your password')
+        return
+      }
+      
+      // Transform the data to match backend expectations
+      const passwordData = {
+        currentPassword: data.currentPassword,
+        newPassword: data.password,
+        confirmPassword: data.confirmPassword
+      }
+      
+      
+      await dispatch(updatePassword(passwordData)).unwrap()
       toast.success('Password updated successfully')
       resetPassword()
     } catch (error) {
@@ -95,6 +115,17 @@ const ProfilePage = () => {
       name: user?.name || '',
       email: user?.email || '',
     })
+  }
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    // Reset password form when switching away from password tab
+    if (tab !== 'password') {
+      resetPassword()
+      setShowCurrentPassword(false)
+      setShowNewPassword(false)
+      setShowConfirmPassword(false)
+    }
   }
 
 
@@ -128,42 +159,57 @@ const ProfilePage = () => {
           <div className="lg:col-span-1">
             <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
               <CardContent className="p-8">
-                <div className="text-center mb-8">
-                  <div className="relative inline-block">
-                    {user?.photo ? (
-                      <img
-                        className="h-32 w-32 rounded-full object-cover mx-auto shadow-lg border-4 border-white"
-                        src={user.photo}
-                        alt={user.name}
-                      />
-                    ) : (
-                      <div className="h-32 w-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto shadow-lg border-4 border-white">
-                        <User className="h-16 w-16 text-white" />
-                      </div>
-                    )}
-                    <button className="absolute bottom-2 right-2 bg-blue-600 text-white rounded-full p-3 hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                      <Camera className="w-5 h-5" />
-                    </button>
+                {!isAuthenticated || !user ? (
+                  <div className="text-center py-8">
+                    <div className="h-32 w-32 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center mx-auto shadow-lg border-4 border-white">
+                      <User className="h-16 w-16 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mt-6 mb-2">
+                      Guest User
+                    </h3>
+                    <p className="text-gray-600 mb-4">Please log in to view your profile</p>
+                    <Button onClick={() => window.location.href = '/login'} className="bg-blue-600 hover:bg-blue-700">
+                      Go to Login
+                    </Button>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mt-6 mb-2">
-                    {user?.name}
-                  </h3>
-                  <p className="text-gray-600 mb-4">{user?.email}</p>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {user?.roles?.map((role) => (
-                      <span
-                        key={role}
-                        className={`px-3 py-1 text-sm font-semibold rounded-full shadow-sm ${roleColors[role]}`}
-                      >
-                        {getRoleDisplayName(role)}
-                      </span>
-                    ))}
+                ) : (
+                  <div className="text-center mb-8">
+                    <div className="relative inline-block">
+                      {user?.photo ? (
+                        <img
+                          className="h-32 w-32 rounded-full object-cover mx-auto shadow-lg border-4 border-white"
+                          src={user.photo}
+                          alt={user.name}
+                        />
+                      ) : (
+                        <div className="h-32 w-32 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mx-auto shadow-lg border-4 border-white">
+                          <User className="h-16 w-16 text-white" />
+                        </div>
+                      )}
+                      <button className="absolute bottom-2 right-2 bg-blue-600 text-white rounded-full p-3 hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                        <Camera className="w-5 h-5" />
+                      </button>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mt-6 mb-2">
+                      {user?.name}
+                    </h3>
+                    <p className="text-gray-600 mb-4">{user?.email}</p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {user?.roles?.map((role) => (
+                        <span
+                          key={role}
+                          className={`px-3 py-1 text-sm font-semibold rounded-full shadow-sm ${roleColors[role]}`}
+                        >
+                          {getRoleDisplayName(role)}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <nav className="space-y-3">
                   <button
-                    onClick={() => setActiveTab('profile')}
+                    onClick={() => handleTabChange('profile')}
                     className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                       activeTab === 'profile'
                         ? 'bg-blue-100 text-blue-700 shadow-md'
@@ -174,7 +220,7 @@ const ProfilePage = () => {
                     Profile Information
                   </button>
                   <button
-                    onClick={() => setActiveTab('password')}
+                    onClick={() => handleTabChange('password')}
                     className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                       activeTab === 'password'
                         ? 'bg-blue-100 text-blue-700 shadow-md'
@@ -186,7 +232,7 @@ const ProfilePage = () => {
                   </button>
                   {user?.roles?.includes('admin') && (
                     <button
-                      onClick={() => setActiveTab('admin')}
+                      onClick={() => handleTabChange('admin')}
                       className={`w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                         activeTab === 'admin'
                           ? 'bg-blue-100 text-blue-700 shadow-md'
@@ -198,6 +244,7 @@ const ProfilePage = () => {
                     </button>
                   )}
                 </nav>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -209,7 +256,7 @@ const ProfilePage = () => {
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-2xl font-bold text-gray-900">Profile Information</CardTitle>
-                    {!isEditing && (
+                    {!isEditing && isAuthenticated && user && (
                       <Button variant="outline" onClick={handleEditClick} className="bg-white hover:bg-gray-50 border-gray-300">
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Profile
@@ -218,7 +265,15 @@ const ProfilePage = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-8">
-                  {!isEditing ? (
+                  {!isAuthenticated || !user ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600 mb-4">Please log in to view your profile</p>
+                      <Button onClick={() => window.location.href = '/login'} className="bg-blue-600 hover:bg-blue-700">
+                        Go to Login
+                      </Button>
+                    </div>
+                  ) : (
+                    !isEditing ? (
                     // Display current user data
                     <div className="space-y-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -289,6 +344,7 @@ const ProfilePage = () => {
                         </div>
                       )}
                     </form>
+                    )
                   )}
                 </CardContent>
               </Card>
@@ -300,22 +356,45 @@ const ProfilePage = () => {
                   <CardTitle className="text-2xl font-bold text-gray-900">Change Password</CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
+                  {!isAuthenticated || !user ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-600 mb-4">Please log in to update your password</p>
+                      <Button onClick={() => window.location.href = '/login'} className="bg-blue-600 hover:bg-blue-700">
+                        Go to Login
+                      </Button>
+                    </div>
+                  ) : (
                   <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-8">
                     <div className="space-y-2">
                       <Input
                         label="Current Password"
-                        type="password"
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        placeholder="Enter your current password"
                         {...registerPassword('currentPassword', {
                           required: 'Current password is required',
                         })}
                         error={passwordErrors.currentPassword?.message}
                         className="bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                        rightIcon={
+                          <button
+                            type="button"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            className="pointer-events-auto"
+                          >
+                            {showCurrentPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400" />
+                            )}
+                          </button>
+                        }
                       />
                     </div>
                     <div className="space-y-2">
                       <Input
                         label="New Password"
-                        type="password"
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="Enter your new password"
                         {...registerPassword('password', {
                           required: 'New password is required',
                           minLength: {
@@ -329,21 +408,59 @@ const ProfilePage = () => {
                         })}
                         error={passwordErrors.password?.message}
                         className="bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                        rightIcon={
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="pointer-events-auto"
+                          >
+                            {showNewPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400" />
+                            )}
+                          </button>
+                        }
                       />
                     </div>
                     <div className="space-y-2">
                       <Input
                         label="Confirm New Password"
-                        type="password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Confirm your new password"
                         {...registerPassword('confirmPassword', {
                           required: 'Please confirm your new password',
                           validate: (value) =>
-                            value === document.querySelector('input[name="password"]')?.value ||
+                            value === watchPassword('password') ||
                             'Passwords do not match',
                         })}
                         error={passwordErrors.confirmPassword?.message}
                         className="bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                        rightIcon={
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="pointer-events-auto"
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400" />
+                            )}
+                          </button>
+                        }
                       />
+                    </div>
+
+                    {/* Password Requirements */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">Password Requirements:</h4>
+                      <ul className="text-xs text-blue-700 space-y-1">
+                        <li>• At least 8 characters long</li>
+                        <li>• Contains at least one uppercase letter</li>
+                        <li>• Contains at least one lowercase letter</li>
+                        <li>• Contains at least one number</li>
+                      </ul>
                     </div>
 
                     <div className="flex justify-end pt-6 border-t border-gray-200">
@@ -353,6 +470,7 @@ const ProfilePage = () => {
                       </Button>
                     </div>
                   </form>
+                  )}
                 </CardContent>
               </Card>
             )}
