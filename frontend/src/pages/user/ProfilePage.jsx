@@ -244,7 +244,6 @@ const ProfilePage = () => {
                     </button>
                   )}
                 </nav>
-                )}
               </CardContent>
             </Card>
           </div>
@@ -344,8 +343,8 @@ const ProfilePage = () => {
                         </div>
                       )}
                     </form>
-                    )
-                  )}
+                  )
+                )}
                 </CardContent>
               </Card>
             )}
