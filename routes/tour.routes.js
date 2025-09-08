@@ -22,7 +22,7 @@ router.use("/:tourId/reviews", reviewRouter);
 // ⚠️ IMPORTANT: Specific routes MUST come before parameterized routes
 
 // Aliased route
-router.get("/top-5-cheap", aliasTopTours, getAllTours);
+router.get("/top-5-cheap", aliasTopTours);
 
 // Stats routes - BEFORE /:id route
 // ✅ Only admins can see tour stats
