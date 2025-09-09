@@ -36,6 +36,17 @@ const TourDetailPage = () => {
     }
   }, [dispatch, tourId])
 
+  // Debug tour data
+  useEffect(() => {
+    if (tour) {
+      console.log('🎯 TourDetailPage: Tour data loaded:', tour)
+      console.log('🎯 TourDetailPage: Ratings data:', {
+        ratingsAverage: tour.ratingsAverage,
+        ratingsQuantity: tour.ratingsQuantity
+      })
+    }
+  }, [tour])
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -94,7 +105,7 @@ const TourDetailPage = () => {
             <div className="flex items-center justify-center space-x-6 text-lg">
               <div className="flex items-center">
                 <Star className="w-5 h-5 text-yellow-400 mr-1" />
-                <span>{tour.ratingsAverage} ({tour.ratingsQuantity} reviews)</span>
+                <span>{tour.ratingsAverage} ({tour.ratingsQuantity} review{tour.ratingsQuantity !== 1 ? 's' : ''})</span>
               </div>
               <div className="flex items-center">
                 <MapPin className="w-5 h-5 mr-1" />
@@ -174,7 +185,7 @@ const TourDetailPage = () => {
                         <div className="flex items-center">
                           {renderStars(tour.ratingsAverage)}
                           <span className="ml-2 text-secondary-600">
-                            {tour.ratingsAverage} ({tour.ratingsQuantity} reviews)
+                            {tour.ratingsAverage} ({tour.ratingsQuantity} review{tour.ratingsQuantity !== 1 ? 's' : ''})
                           </span>
                         </div>
                       </div>
@@ -219,10 +230,10 @@ const TourDetailPage = () => {
                             {location.day}
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-medium text-secondary-900">{location.description}</h4>
-                            <p className="text-sm text-secondary-600">
-                              Day {location.day} of your {tour.duration}-day adventure
-                            </p>
+                            <h4 className="font-medium text-secondary-900">{location.address}</h4>
+                            {location.description && (
+                              <p className="text-sm text-secondary-600 mt-1">{location.description}</p>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -230,7 +241,6 @@ const TourDetailPage = () => {
                 </CardContent>
               </Card>
             )}
-
 
             {/* Tour Images */}
             {tour.images && tour.images.length > 0 && (

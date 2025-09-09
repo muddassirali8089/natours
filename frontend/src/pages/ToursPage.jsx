@@ -19,6 +19,7 @@ import {
   setSort,
   setPage
 } from '../features/tour/tourSlice'
+import { fetchTourReviews, selectReviews } from '../features/review/reviewSlice'
 import { Card, CardContent } from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -227,7 +228,7 @@ const ToursPage = () => {
                       <Star className="w-4 h-4 text-yellow-400 mr-1" />
                       <span className="text-sm font-medium">{tour.ratingsAverage}</span>
                       <span className="text-sm text-secondary-500 ml-1">
-                        ({tour.ratingsQuantity})
+                        ({tour.ratingsQuantity} review{tour.ratingsQuantity !== 1 ? 's' : ''})
                       </span>
                     </div>
                   </div>
