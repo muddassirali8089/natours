@@ -51,7 +51,9 @@ const AdminDashboard = () => {
   // Calculate stats from API data
   const totalUsers = users && Array.isArray(users) ? users.length : 0
   const activeUsers = users && Array.isArray(users) ? users.filter(user => user.active !== false).length : 0
+  const inactiveUsers = totalUsers - activeUsers
   const verifiedUsers = users && Array.isArray(users) ? users.filter(user => user.emailVerified).length : 0
+  const unverifiedUsers = totalUsers - verifiedUsers
   
   // Calculate tour stats from the stats array
   // Note: stats comes from Redux as the actual data array, not wrapped in data object
@@ -68,7 +70,9 @@ const AdminDashboard = () => {
   console.log('Total Reviews:', totalReviews)
   console.log('Average Rating:', avgRating)
   console.log('Active Users:', activeUsers)
+  console.log('Inactive Users:', inactiveUsers)
   console.log('Verified Users:', verifiedUsers)
+  console.log('Unverified Users:', unverifiedUsers)
 
   const statsCards = [
     {
@@ -108,6 +112,15 @@ const AdminDashboard = () => {
       percentage: totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : 0,
       icon: Users,
       color: 'text-green-600',
+      bgColor: 'bg-green-100',
+    },
+    {
+      title: 'Inactive Users',
+      value: inactiveUsers,
+      percentage: totalUsers > 0 ? ((inactiveUsers / totalUsers) * 100).toFixed(1) : 0,
+      icon: Users,
+      color: 'text-red-600',
+      bgColor: 'bg-red-100',
     },
     {
       title: 'Verified Users',
@@ -115,6 +128,15 @@ const AdminDashboard = () => {
       percentage: totalUsers > 0 ? ((verifiedUsers / totalUsers) * 100).toFixed(1) : 0,
       icon: Star,
       color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+    },
+    {
+      title: 'Unverified Users',
+      value: unverifiedUsers,
+      percentage: totalUsers > 0 ? ((unverifiedUsers / totalUsers) * 100).toFixed(1) : 0,
+      icon: Star,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
     },
   ]
 
@@ -207,21 +229,19 @@ const AdminDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 {userStatsCards.map((stat, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-secondary-50 rounded-lg">
-                    <div className="flex items-center">
-                      <div className={`p-2 rounded-full bg-white ${stat.color}`}>
-                        <stat.icon className="w-4 h-4" />
+                  <div key={index} className="p-4 bg-secondary-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`p-2 rounded-full ${stat.bgColor}`}>
+                        <stat.icon className={`w-4 h-4 ${stat.color}`} />
                       </div>
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-secondary-900">{stat.title}</p>
-                        <p className="text-2xl font-bold text-secondary-900">{stat.value}</p>
+                      <div className="text-right">
+                        <p className="text-xs text-secondary-600">{stat.percentage}%</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-secondary-600">{stat.percentage}%</p>
-                    </div>
+                    <p className="text-sm font-medium text-secondary-900 mb-1">{stat.title}</p>
+                    <p className="text-xl font-bold text-secondary-900">{stat.value}</p>
                   </div>
                 ))}
               </div>
