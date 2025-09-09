@@ -19,8 +19,6 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
-import TourMap from '../components/ui/TourMap'
-import SimpleMap from '../components/ui/SimpleMap'
 import ReviewsSection from '../components/ui/ReviewsSection'
 
 const TourDetailPage = () => {
@@ -85,7 +83,7 @@ const TourDetailPage = () => {
       {/* Hero Section */}
       <div className="relative h-96 lg:h-[500px]">
         <img
-          src={`/img/tours/${tour.imageCover}`}
+          src={tour.imageCover}
           alt={tour.name}
           className="w-full h-full object-cover"
         />
@@ -233,17 +231,6 @@ const TourDetailPage = () => {
               </Card>
             )}
 
-            {/* Tour Map */}
-            {tour.locations && tour.locations.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tour Route Map</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <TourMap tour={tour} />
-                </CardContent>
-              </Card>
-            )}
 
             {/* Tour Images */}
             {tour.images && tour.images.length > 0 && (
@@ -256,7 +243,7 @@ const TourDetailPage = () => {
                     {tour.images.map((image, index) => (
                       <img
                         key={index}
-                        src={`/img/tours/${image}`}
+                        src={image}
                         alt={`${tour.name} ${index + 1}`}
                         className="w-full h-48 object-cover rounded-lg"
                       />
