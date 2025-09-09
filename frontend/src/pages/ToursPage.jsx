@@ -39,6 +39,15 @@ const ToursPage = () => {
     dispatch(fetchTours())
   }, [dispatch])
 
+  // Debug tours data
+  useEffect(() => {
+    if (tours && tours.length > 0) {
+      console.log('🖼️ ToursPage: Tours data loaded:', tours.length, 'tours')
+      console.log('🖼️ First tour image:', tours[0]?.imageCover)
+      console.log('🖼️ Sample tour data:', tours[0])
+    }
+  }, [tours])
+
   const handleSearch = (e) => {
     e.preventDefault()
     dispatch(setFilters({ search: searchTerm }))
@@ -181,9 +190,12 @@ const ToursPage = () => {
               <Card key={tour._id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="relative">
                   <img
-                    src={`/img/tours/${tour.imageCover}`}
+                    src={tour.imageCover}
                     alt={tour.name}
                     className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      e.target.src = '/img/tours/default-tour.jpg'
+                    }}
                   />
                   <div className="absolute top-4 right-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${difficultyColors[tour.difficulty]}`}>
