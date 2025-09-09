@@ -84,6 +84,18 @@ export const updateProfile = createAsyncThunk(
   }
 )
 
+export const updateProfileWithPhoto = createAsyncThunk(
+  'auth/updateProfileWithPhoto',
+  async (formData, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.updateProfileWithPhoto(formData)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Photo update failed')
+    }
+  }
+)
+
 export const updatePassword = createAsyncThunk(
   'auth/updatePassword',
   async (passwordData, { rejectWithValue }) => {
@@ -221,6 +233,21 @@ const authSlice = createSlice({
         state.error = null
       })
       .addCase(updateProfile.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.payload
+      })
+      
+      // Update profile with photo
+      .addCase(updateProfileWithPhoto.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(updateProfileWithPhoto.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.user = action.payload.data.user
+        state.error = null
+      })
+      .addCase(updateProfileWithPhoto.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.payload
       })

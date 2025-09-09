@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { 
   updateProfile,
+  updateProfileWithPhoto,
   updatePassword,
   getCurrentUser,
   selectUser,
@@ -39,6 +40,8 @@ const ProfilePage = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [selectedPhoto, setSelectedPhoto] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
 
   // Load current user data when component mounts
   useEffect(() => {
@@ -99,6 +102,92 @@ const ProfilePage = () => {
       resetPassword()
     } catch (error) {
       toast.error(error || 'Failed to update password')
+    }
+  }
+
+  const handlePhotoSelect = (event) => {
+    const file = event.target.files[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file')
+        return
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB')
+        return
+      }
+      
+      setSelectedPhoto(file)
+      
+      // Create preview URL
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setPhotoPreview(e.target.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handlePhotoUpload = async () => {
+    if (!selectedPhoto) {
+      toast.error('Please select a photo first')
+      return
+    }
+
+    // Check if user is authenticated
+    if (!isAuthenticated || !user) {
+      toast.error('Please log in to upload a photo')
+      return
+    }
+
+    // Check if token exists
+    const token = localStorage.getItem('token')
+    if (!token) {
+      toast.error('Authentication token missing. Please log in again.')
+      return
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append('photo', selectedPhoto)
+      
+      console.log('📤 Uploading photo:', {
+        hasPhoto: !!selectedPhoto,
+        photoName: selectedPhoto.name,
+        photoSize: selectedPhoto.size,
+        hasToken: !!token,
+        isAuthenticated
+      })
+      
+      await dispatch(updateProfileWithPhoto(formData)).unwrap()
+      toast.success('Photo updated successfully')
+      
+      // Reset photo state
+      setSelectedPhoto(null)
+      setPhotoPreview(null)
+      
+      // Clear file input
+      const fileInput = document.getElementById('photo-upload')
+      if (fileInput) {
+        fileInput.value = ''
+      }
+    } catch (error) {
+      console.error('Photo upload error:', error)
+      toast.error(error || 'Failed to update photo')
+    }
+  }
+
+  const handleCancelPhotoUpload = () => {
+    setSelectedPhoto(null)
+    setPhotoPreview(null)
+    
+    // Clear file input
+    const fileInput = document.getElementById('photo-upload')
+    if (fileInput) {
+      fileInput.value = ''
     }
   }
 
@@ -176,7 +265,13 @@ const ProfilePage = () => {
                 ) : (
                   <div className="text-center mb-8">
                     <div className="relative inline-block">
-                      {user?.photo ? (
+                      {photoPreview ? (
+                        <img
+                          className="h-32 w-32 rounded-full object-cover mx-auto shadow-lg border-4 border-white"
+                          src={photoPreview}
+                          alt="Preview"
+                        />
+                      ) : user?.photo ? (
                         <img
                           className="h-32 w-32 rounded-full object-cover mx-auto shadow-lg border-4 border-white"
                           src={user.photo}
@@ -187,10 +282,45 @@ const ProfilePage = () => {
                           <User className="h-16 w-16 text-white" />
                         </div>
                       )}
-                      <button className="absolute bottom-2 right-2 bg-blue-600 text-white rounded-full p-3 hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl">
+                      <label htmlFor="photo-upload" className="absolute bottom-2 right-2 bg-blue-600 text-white rounded-full p-3 hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl cursor-pointer">
                         <Camera className="w-5 h-5" />
-                      </button>
+                      </label>
+                      <input
+                        id="photo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoSelect}
+                        className="hidden"
+                      />
                     </div>
+                    
+                    {/* Photo Upload Controls */}
+                    {selectedPhoto && (
+                      <div className="mt-4 space-y-2">
+                        <p className="text-sm text-gray-600">
+                          Selected: {selectedPhoto.name}
+                        </p>
+                        <div className="flex justify-center space-x-2">
+                          <Button
+                            size="sm"
+                            onClick={handlePhotoUpload}
+                            loading={isLoading}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            <Save className="w-4 h-4 mr-1" />
+                            Upload
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCancelPhotoUpload}
+                            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     <h3 className="text-xl font-bold text-gray-900 mt-6 mb-2">
                       {user?.name}
                     </h3>

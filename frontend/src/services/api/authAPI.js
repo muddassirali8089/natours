@@ -26,6 +26,11 @@ export const authAPI = {
     return apiClient.patch('/users/updateMe', userData)
   },
 
+  // Update user profile with photo
+  updateProfileWithPhoto: async (formData) => {
+    return apiClient.patch('/users/updateMe', formData)
+  },
+
   // Update password
   updatePassword: async (passwordData) => {
     return apiClient.patch('/users/updateMyPassword', passwordData)

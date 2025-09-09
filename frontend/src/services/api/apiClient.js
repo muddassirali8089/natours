@@ -13,6 +13,15 @@ class ApiClient {
     // Get token from localStorage (if available)
     const token = localStorage.getItem('token')
     
+    // Debug logging
+    console.log('🔍 API Request Debug:', {
+      endpoint,
+      url,
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token',
+      method: options.method || 'GET'
+    })
+    
     const config = {
       credentials: 'include', // Include cookies for authentication
       headers: {
@@ -43,7 +52,23 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`)
+        // Enhanced error handling for authentication issues
+        if (response.status === 401) {
+          console.error('🚨 Authentication Error:', {
+            status: response.status,
+            message: data.message || data,
+            endpoint,
+            hasToken: !!token
+          })
+          
+          // Clear invalid token
+          if (token) {
+            localStorage.removeItem('token')
+            console.log('🗑️ Cleared invalid token from localStorage')
+          }
+        }
+        
+        throw new Error(data.message || data || `HTTP error! status: ${response.status}`)
       }
 
       return { data, status: response.status }
