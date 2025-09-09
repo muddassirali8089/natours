@@ -3,6 +3,8 @@ import catchAsync from './catchAsync.js';
 import AppError from '../utils/AppError.js';
 import { deleteOne, updateOne } from './handlerFactory.js';
 import { sendVerificationEmail } from './sendVerificationEmail.js';
+import cloudinary from '../utils/cloudinary.js';
+import streamifier from 'streamifier';
 
 export const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -59,80 +61,92 @@ export const getAllUsers = catchAsync(async (req, res, next) => {
 
 
 export const updateMe = catchAsync(async (req, res, next) => {
-  // 1. Block password updates here
-  if (req.body.password || req.body.confirmPassword) {
-    return next(
-      new AppError("This route is not for password updates. Please use /updateMyPassword", 400)
+  try {
+    const userId = req.user.id;
+    const { name } = req.body || {};
+
+    console.log('Update Profile Request:', {
+      userId,
+      body: req.body,
+      hasFile: !!req.file,
+      fileType: req.file?.mimetype
+    });
+
+    // Block password updates
+    if ((req.body && req.body.password) || (req.body && req.body.confirmPassword)) {
+      return next(
+        new AppError("This route is not for password updates. Please use /updateMyPassword", 400)
+      );
+    }
+
+    // Check for invalid fields
+    const allowedFields = ['name'];
+    const invalidFields = Object.keys(req.body || {}).filter(field => 
+      !allowedFields.includes(field) && 
+      field !== 'password' && 
+      field !== 'confirmPassword'
     );
-  }
-
-  // 2. Filter body to allow only name & email
-  const filteredBody = filterObj(req.body, "name", "email");
-
-  // 3. Check if email is being changed
-  const currentUser = await User.findById(req.user.id);
-  const isEmailChanging = filteredBody.email && filteredBody.email !== currentUser.email;
-
-  if (isEmailChanging) {
-    // 4. If email is changing, require verification
-    // Check if email already exists
-    const existingUser = await User.findOne({ email: filteredBody.email });
-    if (existingUser) {
-      return next(new AppError("Email already in use", 400));
+    
+    if (invalidFields.length > 0) {
+      console.log('❌ Invalid fields detected:', invalidFields);
+      return next(new AppError(`Invalid fields: ${invalidFields.join(', ')}. Only name and profileImage are allowed.`, 400));
     }
 
-    // Set email as unverified and create verification token
-    filteredBody.emailVerified = false;
-    const verificationToken = currentUser.createEmailVerificationToken();
-    
-    // 🔧 BUG FIX: Include the token fields from currentUser in the update
-    filteredBody.emailVerificationToken = currentUser.emailVerificationToken;
-    filteredBody.emailVerificationExpires = currentUser.emailVerificationExpires;
-    
-    // 🔍 DEBUG: Log what we're saving
-    console.log("🔍 Email update debugging:");
-    console.log("Plain token:", verificationToken);
-    console.log("Hashed token:", currentUser.emailVerificationToken);
-    console.log("Token expires at:", currentUser.emailVerificationExpires);
-    console.log("Current time:", Date.now());
-    console.log("Time until expiry:", currentUser.emailVerificationExpires - Date.now(), "ms");
-    
-    // Update user with new email AND token fields
-    const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
+    if (!name && !req.file) {
+      return next(new AppError("Provide at least one field to update!", 400));
+    }
+
+    const updateData = {};
+
+    if (name) updateData.name = name;
+
+    if (req.file) {
+      console.log('Processing image upload...');
+      // Upload new image to Cloudinary
+      const uploadedImage = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "users", // store profile images under users folder
+            resource_type: "image",
+          },
+          (error, result) => {
+            if (error) {
+              console.error('Cloudinary upload error:', error);
+              reject(error);
+            } else {
+              console.log('Image uploaded successfully:', result.secure_url);
+              resolve(result);
+            }
+          }
+        );
+
+        streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+      });
+
+      updateData.photo = uploadedImage.secure_url; // Store in 'photo' field of model
+    }
+
+    console.log('Updating user with data:', updateData);
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
-      runValidators: true
-    });
-    
-    // 🔍 DEBUG: Verify the token was saved
-    console.log("🔍 After update:");
-    console.log("Updated user token:", updatedUser.emailVerificationToken);
-    console.log("Updated user expires:", updatedUser.emailVerificationExpires);
+      runValidators: true,
+    }).select("-password");
 
-    // Send verification email to NEW email address
-    const tempUser = { ...updatedUser.toObject(), email: filteredBody.email };
-    await sendVerificationEmail(req, tempUser, verificationToken);
-
-    return res.status(200).json({
-      status: "success",
-      message: "Email updated successfully. Please check your new email for verification link to complete the process.",
-      data: {
-        user: updatedUser
-      }
-    });
-  }
-
-  // 5. If only name is being updated (no email change)
-  const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
-    new: true,
-    runValidators: true
-  });
-
-  res.status(200).json({
-    status: "success",
-    data: {
-      user: updatedUser
+    if (!updatedUser) {
+      return next(new AppError("User not found", 404));
     }
-  });
+
+    console.log('User updated successfully:', updatedUser._id);
+
+    res.status(200).json({
+      status: "success",
+      data: { user: updatedUser },
+    });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    return next(error);
+  }
 });
 
 // Deactivate the currently logged-in user

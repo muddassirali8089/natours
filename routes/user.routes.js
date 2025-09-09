@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import {
   signup,
   login,
@@ -22,6 +23,21 @@ import {
 import { loginLimiter, generalLimiter } from "../utils/rateLimiters.js";
 import { verifyEmail } from "../controllers/verifyEmail.js";
 
+// Configure multer for memory storage (for Cloudinary)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
+
 const router = express.Router();
 
 // Authentication routes (no protection needed)
@@ -36,7 +52,7 @@ router.patch("/resetPassword/:token", generalLimiter, resetPassword);
 router.get("/me", protect, getMe);
 router.get("/my-reviews", protect, getMyReviews);
 router.patch("/updateMyPassword", protect, updateMyPassword);
-router.patch("/updateMe", protect, updateMe);
+router.patch("/updateMe", protect, upload.single("photo"), updateMe);
 router.delete("/deleteMe", protect, deleteMe);
 
 // GET /api/v1/users

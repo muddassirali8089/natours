@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema({
   },
   photo: {
     type: String,
+    default: "https://res.cloudinary.com/dujmvhjyt/image/upload/v1755785753/users/default-avatar.jpg", // Default avatar from your Cloudinary
   },
   password: {
     type: String,
