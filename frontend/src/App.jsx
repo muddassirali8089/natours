@@ -21,6 +21,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminTours from './pages/admin/AdminTours'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminReviews from './pages/admin/AdminReviews'
+import CreateTourForm from './pages/admin/CreateTourForm'
 import NotFoundPage from './pages/NotFoundPage'
 
 // Protected Route Component
@@ -75,6 +76,11 @@ function App() {
           <Route path="/admin/tours" element={
             <ProtectedRoute requireAdmin>
               <AdminTours />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/tours/create" element={
+            <ProtectedRoute requireAdmin>
+              <CreateTourForm />
             </ProtectedRoute>
           } />
           <Route path="/admin/users" element={

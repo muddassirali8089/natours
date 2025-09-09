@@ -161,7 +161,10 @@ const AdminTours = () => {
                 <p className="text-gray-600 mt-2">Manage all tours in your system</p>
               </div>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => navigate('/admin/tours/create')}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add New Tour
             </Button>
