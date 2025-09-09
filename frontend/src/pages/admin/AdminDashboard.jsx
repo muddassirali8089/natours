@@ -12,8 +12,9 @@ import {
   ArrowLeft,
   Home
 } from 'lucide-react'
-import { fetchTourStats, fetchMonthlyPlan, selectTourStats, selectMonthlyPlan, selectToursLoading, selectToursError } from '../../features/tour/tourSlice'
+import { fetchTourStats, fetchMonthlyPlan, fetchTours, selectTourStats, selectMonthlyPlan, selectTours, selectToursLoading, selectToursError } from '../../features/tour/tourSlice'
 import { fetchUsers, selectUsers, selectUsersLoading, selectUsersError } from '../../features/user/userSlice'
+import { fetchReviews, selectReviews, selectReviewsLoading, selectReviewsError } from '../../features/review/reviewSlice'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
@@ -22,16 +23,22 @@ const AdminDashboard = () => {
   const navigate = useNavigate()
   const stats = useSelector(selectTourStats)
   const monthlyPlan = useSelector(selectMonthlyPlan)
+  const tours = useSelector(selectTours)
   const users = useSelector(selectUsers)
+  const reviews = useSelector(selectReviews)
   const toursLoading = useSelector(selectToursLoading)
   const toursError = useSelector(selectToursError)
   const usersLoading = useSelector(selectUsersLoading)
   const usersError = useSelector(selectUsersError)
+  const reviewsLoading = useSelector(selectReviewsLoading)
+  const reviewsError = useSelector(selectReviewsError)
 
   useEffect(() => {
     dispatch(fetchTourStats())
     dispatch(fetchMonthlyPlan(new Date().getFullYear()))
+    dispatch(fetchTours()) // Fetch all tours for accurate count
     dispatch(fetchUsers())
+    dispatch(fetchReviews()) // Fetch all reviews for accurate count
   }, [dispatch])
 
   // Console log API responses for debugging
@@ -39,11 +46,17 @@ const AdminDashboard = () => {
     console.log('🔍 AdminDashboard API Responses:')
     console.log('📊 Tour Stats (raw):', stats)
     console.log('📊 Tour Stats type:', typeof stats, 'isArray:', Array.isArray(stats))
+    console.log('🗺️ Tours (raw):', tours)
+    console.log('🗺️ Tours type:', typeof tours, 'isArray:', Array.isArray(tours))
+    console.log('🗺️ Tours length:', tours?.length)
+    console.log('⭐ Reviews (raw):', reviews)
+    console.log('⭐ Reviews type:', typeof reviews, 'isArray:', Array.isArray(reviews))
+    console.log('⭐ Reviews length:', reviews?.length)
     console.log('📅 Monthly Plan (raw):', monthlyPlan)
     console.log('👥 Users (raw):', users)
     console.log('👥 Users type:', typeof users, 'isArray:', Array.isArray(users))
     console.log('👥 Users length:', users?.length)
-  }, [stats, monthlyPlan, users])
+  }, [stats, tours, reviews, monthlyPlan, users])
 
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth()
@@ -55,16 +68,33 @@ const AdminDashboard = () => {
   const verifiedUsers = users && Array.isArray(users) ? users.filter(user => user.emailVerified).length : 0
   const unverifiedUsers = totalUsers - verifiedUsers
   
-  // Calculate tour stats from the stats array
-  // Note: stats comes from Redux as the actual data array, not wrapped in data object
-  const totalTours = stats && Array.isArray(stats) ? stats.reduce((sum, stat) => sum + stat.numTours, 0) : 0
-  const totalReviews = stats && Array.isArray(stats) ? stats.reduce((sum, stat) => sum + stat.numRating, 0) : 0
-  const avgRating = stats && Array.isArray(stats) && totalReviews > 0 
-    ? (stats.reduce((sum, stat) => sum + (stat.avgRating * stat.numRating), 0) / totalReviews).toFixed(1)
+  // Extract tours data - handle both direct array and nested structure
+  const toursArray = tours && Array.isArray(tours) 
+    ? tours 
+    : tours && tours.data && Array.isArray(tours.data.tours) 
+      ? tours.data.tours 
+      : []
+
+  // Extract reviews data - handle both direct array and nested structure
+  const reviewsArray = reviews && Array.isArray(reviews) 
+    ? reviews 
+    : reviews && reviews.data && Array.isArray(reviews.data.reviews) 
+      ? reviews.data.reviews 
+      : []
+
+  // Calculate tour stats from actual tours data
+  const totalTours = toursArray.length
+  const totalReviews = reviewsArray.length // Use actual reviews count, not ratingsQuantity
+  const avgRating = reviewsArray.length > 0 
+    ? (reviewsArray.reduce((sum, review) => sum + (review.rating || 0), 0) / reviewsArray.length).toFixed(1)
     : '0.0'
 
   // Debug calculations
   console.log('🧮 Calculated Stats:')
+  console.log('Tours Array:', toursArray)
+  console.log('Tours Array length:', toursArray.length)
+  console.log('Reviews Array:', reviewsArray)
+  console.log('Reviews Array length:', reviewsArray.length)
   console.log('Total Tours:', totalTours)
   console.log('Total Users:', totalUsers)
   console.log('Total Reviews:', totalReviews)
@@ -141,7 +171,7 @@ const AdminDashboard = () => {
   ]
 
   // Show loading state if data is still loading
-  if (toursLoading || usersLoading) {
+  if (toursLoading || usersLoading || reviewsLoading) {
     return (
       <div className="min-h-screen bg-secondary-50 flex items-center justify-center">
         <LoadingSpinner size="lg" text="Loading dashboard data..." />
@@ -150,7 +180,7 @@ const AdminDashboard = () => {
   }
 
   // Show error state if there are errors
-  if (toursError || usersError) {
+  if (toursError || usersError || reviewsError) {
     return (
       <div className="min-h-screen bg-secondary-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -160,13 +190,18 @@ const AdminDashboard = () => {
               <p className="text-red-600 mb-2">Tour data error: {toursError}</p>
             )}
             {usersError && (
-              <p className="text-red-600 mb-4">User data error: {usersError}</p>
+              <p className="text-red-600 mb-2">User data error: {usersError}</p>
+            )}
+            {reviewsError && (
+              <p className="text-red-600 mb-4">Reviews data error: {reviewsError}</p>
             )}
             <button
               onClick={() => {
                 dispatch(fetchTourStats())
                 dispatch(fetchMonthlyPlan(new Date().getFullYear()))
+                dispatch(fetchTours())
                 dispatch(fetchUsers())
+                dispatch(fetchReviews())
               }}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
