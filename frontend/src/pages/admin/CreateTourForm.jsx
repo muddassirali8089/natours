@@ -25,19 +25,140 @@ const CreateTourForm = () => {
   const navigate = useNavigate()
   const { isLoading: loading, error } = useSelector(state => state.tours)
   
-  const [startDates, setStartDates] = useState([])
-  const [locations, setLocations] = useState([])
-  const [images, setImages] = useState([])
+  const [startDates, setStartDates] = useState(['2024-03-15', '2024-03-22', '2024-03-29'])
+  const [locations, setLocations] = useState([
+    {
+      address: 'Times Square, New York, NY, USA',
+      day: '1',
+      description: 'Visit the famous landmark, take photos, shopping'
+    },
+    {
+      address: 'Statue of Liberty, New York, NY, USA', 
+      day: '2',
+      description: 'Boat tour to the island, learn about history'
+    }
+  ])
   const [newStartDate, setNewStartDate] = useState('')
   const [newLocation, setNewLocation] = useState({
-    coordinates: ['', ''],
     address: '',
     description: '',
     day: ''
   })
-  const [newImage, setNewImage] = useState('')
-  const [imageFiles, setImageFiles] = useState([])
   const [coverImageFile, setCoverImageFile] = useState(null)
+  const [imageFiles, setImageFiles] = useState([])
+  const [validationErrors, setValidationErrors] = useState({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Validation function
+  const validateForm = (data) => {
+    const errors = {}
+    
+    // Basic field validation
+    if (!data.name || data.name.trim().length < 3) {
+      errors.name = 'Tour name must be at least 3 characters long'
+    }
+    
+    if (!data.duration || isNaN(data.duration) || data.duration < 1) {
+      errors.duration = 'Duration must be a positive number'
+    }
+    
+    if (!data.maxGroupSize || isNaN(data.maxGroupSize) || data.maxGroupSize < 1) {
+      errors.maxGroupSize = 'Max group size must be a positive number'
+    }
+    
+    if (!data.price || isNaN(data.price) || data.price < 0) {
+      errors.price = 'Price must be a valid positive number'
+    }
+    
+    if (data.priceDiscount && (isNaN(data.priceDiscount) || data.priceDiscount < 0)) {
+      errors.priceDiscount = 'Price discount must be a valid positive number'
+    }
+    
+    if (data.priceDiscount && parseFloat(data.priceDiscount) >= parseFloat(data.price)) {
+      errors.priceDiscount = 'Price discount must be less than the original price'
+    }
+    
+    if (!data.summary || data.summary.trim().length < 10) {
+      errors.summary = 'Summary must be at least 10 characters long'
+    }
+    
+    if (!data.description || data.description.trim().length < 20) {
+      errors.description = 'Description must be at least 20 characters long'
+    }
+    
+    if (!data.difficulty || !['easy', 'medium', 'difficult'].includes(data.difficulty)) {
+      errors.difficulty = 'Please select a valid difficulty level'
+    }
+    
+    // Start location validation
+    if (!data.startLocation?.address || data.startLocation.address.trim().length < 5) {
+      errors.startLocation = 'Start location address is required and must be at least 5 characters'
+    }
+    
+    // Start dates validation
+    if (!startDates || startDates.length === 0) {
+      errors.startDates = 'At least one start date is required'
+    } else {
+      for (let i = 0; i < startDates.length; i++) {
+        const date = new Date(startDates[i])
+        if (isNaN(date.getTime())) {
+          errors.startDates = `Invalid date format for start date ${i + 1}`
+          break
+        }
+        // Allow past dates since tours repeat every year
+      }
+    }
+    
+    // Locations validation
+    if (!locations || locations.length === 0) {
+      errors.locations = 'At least one location is required'
+    } else {
+      for (let i = 0; i < locations.length; i++) {
+        const location = locations[i]
+        if (!location.address || location.address.trim().length < 5) {
+          errors.locations = `Location ${i + 1} address is required and must be at least 5 characters`
+          break
+        }
+        if (!location.day || isNaN(location.day) || location.day < 1) {
+          errors.locations = `Location ${i + 1} day must be a positive number`
+          break
+        }
+        if (location.day > data.duration) {
+          errors.locations = `Location ${i + 1} day cannot be greater than tour duration`
+          break
+        }
+      }
+    }
+    
+    // Image validation
+    if (!coverImageFile) {
+      errors.coverImage = 'Cover image is required'
+    } else {
+      // Check file size (5MB limit)
+      if (coverImageFile.size > 5 * 1024 * 1024) {
+        errors.coverImage = 'Cover image must be less than 5MB'
+      }
+      // Check file type
+      if (!coverImageFile.type.startsWith('image/')) {
+        errors.coverImage = 'Cover image must be a valid image file'
+      }
+    }
+    
+    // Additional images validation
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i]
+      if (file.size > 5 * 1024 * 1024) {
+        errors.additionalImages = `Additional image ${i + 1} must be less than 5MB`
+        break
+      }
+      if (!file.type.startsWith('image/')) {
+        errors.additionalImages = `Additional image ${i + 1} must be a valid image file`
+        break
+      }
+    }
+    
+    return errors
+  }
 
   const {
     register,
@@ -47,18 +168,17 @@ const CreateTourForm = () => {
     watch
   } = useForm({
     defaultValues: {
-      name: '',
-      duration: '',
-      maxGroupSize: '',
+      name: 'Test Tour - Amazing Adventure',
+      duration: '5',
+      maxGroupSize: '25',
       difficulty: 'easy',
-      price: '',
-      priceDiscount: '',
-      summary: '',
-      description: '',
+      price: '297.00',
+      priceDiscount: '250.00',
+      summary: 'An amazing test tour with beautiful scenery and great experiences.',
+      description: 'This is a detailed description of our amazing test tour. You will visit beautiful locations, meet amazing people, and create unforgettable memories. Perfect for families and adventure seekers alike.',
       startLocation: {
-        coordinates: ['', ''],
-        address: '',
-        description: ''
+        address: 'Central Park, New York, NY, USA',
+        description: 'Meet at the main entrance near the fountain'
       },
       secretTour: false
     }
@@ -66,36 +186,137 @@ const CreateTourForm = () => {
 
   const onSubmit = async (data) => {
     try {
-      // Prepare tour data
-      const tourData = {
-        ...data,
-        duration: parseInt(data.duration),
-        maxGroupSize: parseInt(data.maxGroupSize),
-        price: parseFloat(data.price),
-        priceDiscount: data.priceDiscount ? parseFloat(data.priceDiscount) : undefined,
-        startDates: startDates.filter(date => date.trim() !== ''),
-        locations: locations.filter(loc => loc.address.trim() !== ''),
-        images: images.filter(img => img.trim() !== ''),
-        startLocation: {
-          ...data.startLocation,
-          coordinates: data.startLocation.coordinates.map(coord => 
-            coord ? parseFloat(coord) : undefined
-          ).filter(coord => coord !== undefined)
-        }
+      // Clear previous validation errors
+      setValidationErrors({})
+      setIsSubmitting(true)
+
+      // Check authentication first
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setValidationErrors({ auth: 'You are not logged in! Please log in first.' })
+        setTimeout(() => navigate('/login'), 2000)
+        return
       }
 
-      // Remove empty fields
-      Object.keys(tourData).forEach(key => {
-        if (tourData[key] === '' || tourData[key] === null || tourData[key] === undefined) {
-          delete tourData[key]
+      // Check if token is valid JWT format
+      const tokenParts = token.split('.')
+      if (tokenParts.length !== 3) {
+        setValidationErrors({ auth: 'Invalid token format! Please log in again.' })
+        localStorage.removeItem('token')
+        setTimeout(() => navigate('/login'), 2000)
+        return
+      }
+      
+      // Check token expiration
+      try {
+        const payload = JSON.parse(atob(tokenParts[1]))
+        const now = Math.floor(Date.now() / 1000)
+        if (payload.exp && payload.exp < now) {
+          setValidationErrors({ auth: 'Token has expired! Please log in again.' })
+          localStorage.removeItem('token')
+          setTimeout(() => navigate('/login'), 2000)
+          return
+        }
+      } catch (error) {
+        setValidationErrors({ auth: 'Invalid token! Please log in again.' })
+        localStorage.removeItem('token')
+        setTimeout(() => navigate('/login'), 2000)
+        return
+      }
+
+      // Validate form data
+      const formErrors = validateForm(data)
+      if (Object.keys(formErrors).length > 0) {
+        setValidationErrors(formErrors)
+        setIsSubmitting(false)
+        return
+      }
+
+      // Create FormData for file uploads
+      const formData = new FormData()
+      
+      // Add basic tour data
+      formData.append('name', data.name)
+      formData.append('duration', data.duration)
+      formData.append('maxGroupSize', data.maxGroupSize)
+      formData.append('difficulty', data.difficulty)
+      formData.append('price', data.price)
+      if (data.priceDiscount) formData.append('priceDiscount', data.priceDiscount)
+      formData.append('summary', data.summary)
+      formData.append('description', data.description)
+      formData.append('secretTour', data.secretTour)
+      
+      // Add start location
+      formData.append('startLocation[address]', data.startLocation.address)
+      if (data.startLocation.description) {
+        formData.append('startLocation[description]', data.startLocation.description)
+      }
+      
+      // Add start dates
+      startDates.forEach((date, index) => {
+        formData.append(`startDates[${index}]`, date)
+      })
+      
+      // Add locations
+      locations.forEach((location, index) => {
+        formData.append(`locations[${index}][address]`, location.address)
+        formData.append(`locations[${index}][day]`, location.day)
+        if (location.description) {
+          formData.append(`locations[${index}][description]`, location.description)
         }
       })
+      
+      // Add cover image
+      if (coverImageFile) {
+        formData.append('coverImage', coverImageFile)
+        console.log('📸 Cover image added:', coverImageFile.name)
+      }
+      
+      // Add additional images
+      imageFiles.forEach((file, index) => {
+        formData.append('images', file)
+        console.log('📸 Additional image added:', file.name)
+      })
 
-      console.log('Creating tour with data:', tourData)
-      await dispatch(createTour(tourData)).unwrap()
-      navigate('/admin/tours')
+      console.log('🚀 Creating tour with FormData...')
+      console.log('📅 Start dates:', startDates)
+      console.log('📍 Locations:', locations)
+      console.log('🖼️ Cover image:', coverImageFile?.name || 'None')
+      console.log('🖼️ Additional images:', imageFiles.length)
+      
+      // Debug FormData contents
+      console.log('📋 FormData contents:')
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value)
+      }
+
+      await dispatch(createTour(formData)).unwrap()
+      
+      // Success - show success message and redirect
+      setValidationErrors({ success: 'Tour created successfully! Redirecting...' })
+      setTimeout(() => {
+        navigate('/admin/tours')
+      }, 2000)
+      
     } catch (error) {
-      console.error('Error creating tour:', error)
+      console.error('❌ Error creating tour:', error)
+      
+      // Handle different types of errors
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        setValidationErrors({ auth: 'Authentication failed. Please log in again.' })
+        localStorage.removeItem('token')
+        setTimeout(() => navigate('/login'), 2000)
+      } else if (error.message?.includes('403') || error.message?.includes('Forbidden')) {
+        setValidationErrors({ auth: 'You do not have permission to create tours.' })
+      } else if (error.message?.includes('validation')) {
+        setValidationErrors({ general: 'Please check your form data and try again.' })
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        setValidationErrors({ general: 'Network error. Please check your connection and try again.' })
+      } else {
+        setValidationErrors({ general: `Error creating tour: ${error.message || 'Unknown error'}` })
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -114,7 +335,6 @@ const CreateTourForm = () => {
     if (newLocation.address.trim() && newLocation.day.trim()) {
       setLocations([...locations, { ...newLocation }])
       setNewLocation({
-        coordinates: ['', ''],
         address: '',
         description: '',
         day: ''
@@ -126,16 +346,6 @@ const CreateTourForm = () => {
     setLocations(locations.filter((_, i) => i !== index))
   }
 
-  const addImage = () => {
-    if (newImage.trim()) {
-      setImages([...images, newImage])
-      setNewImage('')
-    }
-  }
-
-  const removeImage = (index) => {
-    setImages(images.filter((_, i) => i !== index))
-  }
 
   const handleCoverImageChange = (e) => {
     const file = e.target.files[0]
@@ -165,12 +375,62 @@ const CreateTourForm = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Tour</h1>
           <p className="text-gray-600">Fill in the details below to create a new tour</p>
+          
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="font-medium text-blue-900 mb-2">🧪 Testing Made Easy:</h3>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• <strong>Form is pre-filled</strong> with test data - just click "Create Tour"</li>
+              <li>• <strong>"Test Auth"</strong> button checks if your token is valid</li>
+              <li>• <strong>"Refresh Token"</strong> button refreshes your authentication</li>
+              <li>• <strong>"Test (No Images)"</strong> button creates a tour without images</li>
+              <li>• <strong>"Clear Form"</strong> button resets everything</li>
+              <li>• <strong>Make sure you're logged in</strong> as an admin user</li>
+            </ul>
+          </div>
         </div>
 
-        {error && (
+        {/* Success Message */}
+        {validationErrors.success && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
+            <span className="text-green-700 font-medium">✅ {validationErrors.success}</span>
+          </div>
+        )}
+
+        {/* Authentication Errors */}
+        {validationErrors.auth && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+            <span className="text-red-700 font-medium">🔐 {validationErrors.auth}</span>
+          </div>
+        )}
+
+        {/* General Errors */}
+        {validationErrors.general && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+            <span className="text-red-700">{validationErrors.general}</span>
+          </div>
+        )}
+
+        {/* Redux Error (fallback) */}
+        {error && !validationErrors.general && !validationErrors.auth && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
             <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
             <span className="text-red-700">{error}</span>
+          </div>
+        )}
+
+        {/* Validation Errors Summary */}
+        {Object.keys(validationErrors).length > 0 && !validationErrors.success && !validationErrors.auth && !validationErrors.general && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <h4 className="text-red-800 font-medium mb-2">Please fix the following errors:</h4>
+            <ul className="text-red-700 text-sm space-y-1">
+              {Object.entries(validationErrors)
+                .filter(([key]) => !['success', 'auth', 'general'].includes(key))
+                .map(([key, message]) => (
+                  <li key={key}>• {message}</li>
+                ))}
+            </ul>
           </div>
         )}
 
@@ -191,10 +451,12 @@ const CreateTourForm = () => {
                 <Input
                   {...register('name', { required: 'Tour name is required' })}
                   placeholder="e.g., The Forest Hiker, Amazing Tour of New York"
-                  className={errors.name ? 'border-red-500' : ''}
+                  className={errors.name || validationErrors.name ? 'border-red-500' : ''}
                 />
-                {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                {(errors.name || validationErrors.name) && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.name?.message || validationErrors.name}
+                  </p>
                 )}
               </div>
 
@@ -345,32 +607,6 @@ const CreateTourForm = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Longitude (optional)
-                  </label>
-                  <Input
-                    type="number"
-                    step="any"
-                    {...register('startLocation.coordinates.0')}
-                    placeholder="e.g., -74.0060 (optional)"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Can be left empty if you don't know coordinates</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Latitude (optional)
-                  </label>
-                  <Input
-                    type="number"
-                    step="any"
-                    {...register('startLocation.coordinates.1')}
-                    placeholder="e.g., 40.7128 (optional)"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Can be left empty if you don't know coordinates</p>
-                </div>
-              </div>
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -561,6 +797,9 @@ const CreateTourForm = () => {
                 {coverImageFile && (
                   <p className="text-sm text-green-600 mt-1">✓ {coverImageFile.name} selected</p>
                 )}
+                {validationErrors.coverImage && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.coverImage}</p>
+                )}
               </div>
 
               {/* Additional Images Upload */}
@@ -595,43 +834,6 @@ const CreateTourForm = () => {
                 )}
               </div>
 
-              {/* Alternative: URL Input */}
-              <div className="border-t pt-4">
-                <h4 className="font-medium text-gray-700 mb-2">Or add images by URL:</h4>
-                <div className="flex gap-2">
-                  <Input
-                    value={newImage}
-                    onChange={(e) => setNewImage(e.target.value)}
-                    placeholder="https://example.com/tour-image.jpg"
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    onClick={addImage}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                {images.length > 0 && (
-                  <div className="space-y-2 mt-3">
-                    <h4 className="font-medium text-gray-700">Image URLs:</h4>
-                    {images.map((image, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span className="truncate text-sm">{image}</span>
-                        <Button
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="text-red-600 hover:text-red-700 p-1"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </CardContent>
           </Card>
 
@@ -658,22 +860,137 @@ const CreateTourForm = () => {
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
-          <div className="flex justify-end space-x-4">
-            <Button
-              type="button"
-              onClick={() => navigate('/admin/tours')}
-              className="bg-gray-600 hover:bg-gray-700"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={loading}
-            >
-              {loading ? 'Creating...' : 'Create Tour'}
-            </Button>
+          {/* Submit Buttons */}
+          <div className="flex justify-between">
+            <div className="flex space-x-2">
+              <Button
+                type="button"
+                onClick={() => {
+                  if (confirm('Clear all form data?')) {
+                    window.location.reload()
+                  }
+                }}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                Clear Form
+              </Button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token')
+                    if (!token) {
+                      alert('❌ You are not logged in! Please log in first.')
+                      navigate('/login')
+                      return
+                    }
+
+                    // Test with minimal data (no images)
+                    const testData = {
+                      name: 'Test Tour - No Images',
+                      duration: 3,
+                      maxGroupSize: 15,
+                      difficulty: 'easy',
+                      price: 199.00,
+                      summary: 'A simple test tour without images',
+                      description: 'This is a test tour to verify the API works without image uploads.',
+                      startLocation: {
+                        address: 'Test Location, Test City',
+                        description: 'Test meeting point'
+                      },
+                      startDates: ['2024-04-01'],
+                      locations: [{
+                        address: 'Test Stop 1',
+                        day: 1,
+                        description: 'Test stop description'
+                      }]
+                    }
+
+                    console.log('🧪 Testing with minimal data:', testData)
+                    await dispatch(createTour(testData)).unwrap()
+                    alert('✅ Test tour created successfully!')
+                  } catch (error) {
+                    console.error('❌ Test failed:', error)
+                    alert(`❌ Test failed: ${error.message}`)
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Test (No Images)
+              </Button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  try {
+                    // Try to get current user to refresh token
+                    const { getCurrentUser } = await import('../../features/auth/authSlice')
+                    await dispatch(getCurrentUser()).unwrap()
+                    alert('✅ Token refreshed! Try creating a tour now.')
+                  } catch (error) {
+                    console.error('❌ Token refresh failed:', error)
+                    alert('❌ Token refresh failed. Please log in again.')
+                    localStorage.removeItem('token')
+                    navigate('/login')
+                  }
+                }}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                Refresh Token
+              </Button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  try {
+                    // Test authentication by calling a simple protected endpoint
+                    const response = await fetch('http://localhost:8000/api/v1/users/me', {
+                      method: 'GET',
+                      headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                      }
+                    })
+                    
+                    if (response.ok) {
+                      const data = await response.json()
+                      alert(`✅ Auth test passed! User: ${data.data.user.name} (${data.data.user.roles.join(', ')})`)
+                    } else {
+                      const error = await response.json()
+                      alert(`❌ Auth test failed: ${error.message}`)
+                    }
+                  } catch (error) {
+                    console.error('❌ Auth test error:', error)
+                    alert(`❌ Auth test error: ${error.message}`)
+                  }
+                }}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Test Auth
+              </Button>
+            </div>
+            
+            <div className="flex space-x-4">
+              <Button
+                type="button"
+                onClick={() => navigate('/admin/tours')}
+                className="bg-gray-600 hover:bg-gray-700"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={loading || isSubmitting}
+              >
+                {(loading || isSubmitting) ? (
+                  <>
+                    <LoadingSpinner size="sm" className="mr-2" />
+                    Creating Tour...
+                  </>
+                ) : (
+                  'Create Tour'
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </div>

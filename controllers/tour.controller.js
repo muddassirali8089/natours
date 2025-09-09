@@ -4,6 +4,8 @@ import { APIFeatures } from "../utils/apiFeatures.js";
 import catchAsync from "./catchAsync.js";
 import AppError from "../utils/AppError.js";
 import Review from "../models/review.model.js";
+import cloudinary from "../utils/cloudinary.js";
+import streamifier from "streamifier";
 
 import { deleteOne, createOne, updateOne, getAll, getOne } from "../controllers/handlerFactory.js";
 
@@ -11,8 +13,85 @@ import { deleteOne, createOne, updateOne, getAll, getOne } from "../controllers/
 /////////////////////////////////-----CREATE TOUR----/////////////////////////////////////////////
 
 
-// ✅ Create tour using factory
-export const createTour = createOne(Tour);
+// ✅ Create tour with image upload support (like user profile)
+export const createTour = catchAsync(async (req, res, next) => {
+  try {
+    console.log('Creating tour with data:', req.body);
+    console.log('Files received:', req.files);
+
+    const tourData = { ...req.body };
+
+    // Handle cover image upload
+    if (req.files && req.files.coverImage) {
+      console.log('Processing cover image upload...');
+      const uploadedImage = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder: "tours", // store tour images under tours folder
+            resource_type: "image",
+          },
+          (error, result) => {
+            if (error) {
+              console.error('Cloudinary upload error:', error);
+              reject(error);
+            } else {
+              console.log('Cover image uploaded successfully:', result.secure_url);
+              resolve(result);
+            }
+          }
+        );
+
+        streamifier.createReadStream(req.files.coverImage[0].buffer).pipe(uploadStream);
+      });
+
+      // Set as cover image
+      tourData.imageCover = uploadedImage.secure_url;
+    }
+
+    // Handle additional images upload
+    if (req.files && req.files.images && req.files.images.length > 0) {
+      console.log('Processing additional images upload...');
+      const imagePromises = req.files.images.map(file => 
+        new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "tours",
+              resource_type: "image",
+            },
+            (error, result) => {
+              if (error) {
+                console.error('Cloudinary upload error:', error);
+                reject(error);
+              } else {
+                console.log('Additional image uploaded successfully:', result.secure_url);
+                resolve(result);
+              }
+            }
+          );
+
+          streamifier.createReadStream(file.buffer).pipe(uploadStream);
+        })
+      );
+
+      const uploadedImages = await Promise.all(imagePromises);
+      tourData.images = uploadedImages.map(img => img.secure_url);
+    }
+
+    console.log('Final tour data:', tourData);
+
+    const tour = await Tour.create(tourData);
+
+    res.status(201).json({
+      status: "success",
+      data: {
+        data: tour,
+      },
+    });
+  } catch (error) {
+    console.error('Error creating tour:', error);
+    next(error);
+  }
+});
 
 
 

@@ -81,29 +81,25 @@ const tourSchema = new mongoose.Schema(
     },
 
     startLocation: {
-      // GeoJSON object
-      type: {
+      address: {
         type: String,
-        default: "Point",
-        enum: ["Point"],
+        required: [true, "A tour must have a starting address"],
       },
-      coordinates: [Number], // [longitude, latitude]
-      address: String,
       description: String,
     },
 
     // if you want multiple locations (stops in a tour)
     locations: [
       {
-        type: {
+        address: {
           type: String,
-          default: "Point",
-          enum: ["Point"],
+          required: [true, "Location must have an address"],
         },
-        coordinates: [Number],
-        address: String,
         description: String,
-        day: Number,
+        day: {
+          type: Number,
+          required: [true, "Location must have a day number"],
+        },
       },
     ],
     guides: [
@@ -158,7 +154,6 @@ tourSchema.index({
 });
 
 // 5. Geospatial index for location-based queries
-tourSchema.index({ startLocation: "2dsphere" });
 
 // 6. Index for date-based queries (monthly plan functionality)
 tourSchema.index({ startDates: 1 });

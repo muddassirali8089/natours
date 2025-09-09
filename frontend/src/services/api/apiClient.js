@@ -19,7 +19,8 @@ class ApiClient {
       url,
       hasToken: !!token,
       tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token',
-      method: options.method || 'GET'
+      method: options.method || 'GET',
+      fullToken: token // Add full token for debugging
     })
     
     const config = {
@@ -37,6 +38,15 @@ class ApiClient {
     if (options.body instanceof FormData) {
       delete config.headers['Content-Type']
     }
+
+    // Debug: Log the actual headers being sent
+    console.log('🔍 Request Headers:', config.headers)
+    console.log('🔍 Request Config:', {
+      method: config.method || 'GET',
+      url,
+      hasBody: !!config.body,
+      bodyType: config.body ? config.body.constructor.name : 'none'
+    })
 
     try {
       const response = await fetch(url, config)

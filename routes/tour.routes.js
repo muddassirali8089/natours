@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import {
   getAllTours,
   getTour,
@@ -16,6 +17,21 @@ import reviewRouter from "./review.routes.js";
 import { protect, restrictTo } from "../controllers/authContrller.js";
 
 const router = express.Router();
+
+// Configure multer for tour image uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
 
 router.use("/:tourId/reviews", reviewRouter);
 
@@ -47,7 +63,13 @@ router.get("/", getAllTours);
 
 // POST /api/v1/tours
 // ✅ Only guides, lead-guides, and admins can create tours
-router.post("/", protect, restrictTo("guide", "lead-guide", "admin"), createTour);
+router.post("/", protect, restrictTo("guide", "lead-guide", "admin"), 
+  upload.fields([
+    { name: 'coverImage', maxCount: 1 },
+    { name: 'images', maxCount: 10 }
+  ]), 
+  createTour
+);
 
 // GET /api/v1/tours/:id - AFTER specific routes
 // ✅ Anyone can read a single tour
