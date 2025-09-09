@@ -892,6 +892,25 @@ const CreateTourForm = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cover Image
                 </label>
+                
+                {/* Show existing cover image in edit mode */}
+                {isEditMode && tour?.imageCover && !coverImageFile && (
+                  <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-700 mb-2">Current Cover Image:</h4>
+                    <div className="flex items-center space-x-4">
+                      <img 
+                        src={tour.imageCover} 
+                        alt="Current cover" 
+                        className="w-20 h-20 object-cover rounded border"
+                      />
+                      <div>
+                        <p className="text-sm text-gray-600">Existing cover image</p>
+                        <p className="text-xs text-gray-500">Upload a new image to replace it</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <input
                   type="file"
                   accept="image/*"
@@ -911,6 +930,29 @@ const CreateTourForm = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Additional Tour Images
                 </label>
+                
+                {/* Show existing additional images in edit mode */}
+                {isEditMode && tour?.images && tour.images.length > 0 && imageFiles.length === 0 && (
+                  <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-700 mb-2">Current Additional Images:</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {tour.images.map((imageUrl, index) => (
+                        <div key={index} className="relative">
+                          <img 
+                            src={imageUrl} 
+                            alt={`Tour image ${index + 1}`} 
+                            className="w-full h-20 object-cover rounded border"
+                          />
+                          <div className="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-1 rounded">
+                            {index + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">Upload new images to add to or replace existing ones</p>
+                  </div>
+                )}
+                
                 <input
                   type="file"
                   accept="image/*"
