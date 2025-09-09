@@ -83,6 +83,11 @@ function App() {
               <CreateTourForm />
             </ProtectedRoute>
           } />
+          <Route path="/admin/tours/:tourId/edit" element={
+            <ProtectedRoute requireAdmin>
+              <CreateTourForm />
+            </ProtectedRoute>
+          } />
           <Route path="/admin/users" element={
             <ProtectedRoute requireAdmin>
               <AdminUsers />

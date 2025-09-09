@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { 
   Plus, 
@@ -14,7 +14,7 @@ import {
   FileText,
   AlertCircle
 } from 'lucide-react'
-import { createTour } from '../../features/tour/tourSlice'
+import { createTour, updateTour, fetchTour, selectCurrentTour } from '../../features/tour/tourSlice'
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
@@ -23,7 +23,12 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 const CreateTourForm = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { tourId } = useParams()
   const { isLoading: loading, error } = useSelector(state => state.tours)
+  const tour = useSelector(selectCurrentTour)
+  
+  // Determine if we're in edit mode
+  const isEditMode = !!tourId
   
   const [startDates, setStartDates] = useState(['2024-03-15', '2024-03-22', '2024-03-29'])
   const [locations, setLocations] = useState([
@@ -48,6 +53,59 @@ const CreateTourForm = () => {
   const [imageFiles, setImageFiles] = useState([])
   const [validationErrors, setValidationErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Initialize form
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch
+  } = useForm({
+    defaultValues: {
+      name: 'Test Tour - Amazing Adventure',
+      duration: '5',
+      maxGroupSize: '25',
+      difficulty: 'easy',
+      price: '297.01',
+      priceDiscount: '250.00',
+      summary: 'An amazing test tour with beautiful scenery and great experiences.',
+      description: 'This is a detailed description of our amazing test tour. You will visit beautiful locations, meet amazing people, and create unforgettable memories. Perfect for families and adventure seekers alike.',
+      secretTour: true,
+      startLocation: {
+        address: 'Central Park, New York, NY, USA',
+        description: 'Meet at the main entrance near the fountain'
+      }
+    }
+  })
+
+  // Load tour data when in edit mode
+  useEffect(() => {
+    if (isEditMode && tourId) {
+      dispatch(fetchTour(tourId))
+    }
+  }, [dispatch, isEditMode, tourId])
+
+  // Populate form when tour data is loaded (edit mode)
+  useEffect(() => {
+    if (isEditMode && tour) {
+      // Set form values
+      setValue('name', tour.name || '')
+      setValue('duration', tour.duration || '')
+      setValue('maxGroupSize', tour.maxGroupSize || '')
+      setValue('difficulty', tour.difficulty || 'easy')
+      setValue('price', tour.price || '')
+      setValue('priceDiscount', tour.priceDiscount || '')
+      setValue('summary', tour.summary || '')
+      setValue('description', tour.description || '')
+      setValue('secretTour', tour.secretTour || false)
+      setValue('startLocation', tour.startLocation || { address: '', description: '' })
+      
+      // Set arrays
+      setStartDates(tour.startDates || [])
+      setLocations(tour.locations || [])
+    }
+  }, [isEditMode, tour, setValue])
 
   // Validation function
   const validateForm = (data) => {
@@ -160,29 +218,6 @@ const CreateTourForm = () => {
     return errors
   }
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch
-  } = useForm({
-    defaultValues: {
-      name: 'Test Tour - Amazing Adventure',
-      duration: '5',
-      maxGroupSize: '25',
-      difficulty: 'easy',
-      price: '297.00',
-      priceDiscount: '250.00',
-      summary: 'An amazing test tour with beautiful scenery and great experiences.',
-      description: 'This is a detailed description of our amazing test tour. You will visit beautiful locations, meet amazing people, and create unforgettable memories. Perfect for families and adventure seekers alike.',
-      startLocation: {
-        address: 'Central Park, New York, NY, USA',
-        description: 'Meet at the main entrance near the fountain'
-      },
-      secretTour: false
-    }
-  })
 
   const onSubmit = async (data) => {
     try {
@@ -241,7 +276,9 @@ const CreateTourForm = () => {
       formData.append('maxGroupSize', data.maxGroupSize)
       formData.append('difficulty', data.difficulty)
       formData.append('price', data.price)
-      if (data.priceDiscount) formData.append('priceDiscount', data.priceDiscount)
+      if (data.priceDiscount && data.priceDiscount > 0) {
+        formData.append('priceDiscount', data.priceDiscount)
+      }
       formData.append('summary', data.summary)
       formData.append('description', data.description)
       formData.append('secretTour', data.secretTour)
@@ -290,10 +327,46 @@ const CreateTourForm = () => {
         console.log(`  ${key}:`, value)
       }
 
-      await dispatch(createTour(formData)).unwrap()
+      // Client-side validation before sending
+      const price = parseFloat(data.price)
+      const priceDiscount = parseFloat(data.priceDiscount)
+      
+      if (data.priceDiscount && priceDiscount >= price) {
+        setValidationErrors({ 
+          priceDiscount: `Discount price (${priceDiscount}) must be less than regular price (${price})` 
+        })
+        return
+      }
+      
+      if (data.name && data.name.length < 10) {
+        setValidationErrors({ 
+          name: `Tour name must be at least 10 characters long (current: ${data.name.length})` 
+        })
+        return
+      }
+
+      // Dispatch create or update action
+      if (isEditMode) {
+        console.log('🔄 EDIT MODE - Data being sent:')
+        console.log('📋 Form Data:', data)
+        console.log('🆔 Tour ID:', tourId)
+        console.log('💰 Price validation check:')
+        console.log('  - New price:', data.price)
+        console.log('  - New priceDiscount:', data.priceDiscount)
+        console.log('  - Is priceDiscount < price?', parseFloat(data.priceDiscount) < parseFloat(data.price))
+        console.log('📊 FormData contents:')
+        for (let [key, value] of formData.entries()) {
+          console.log(`  ${key}:`, value)
+        }
+        
+        await dispatch(updateTour({ tourId, tourData: formData })).unwrap()
+        setValidationErrors({ success: 'Tour updated successfully! Redirecting...' })
+      } else {
+        await dispatch(createTour(formData)).unwrap()
+        setValidationErrors({ success: 'Tour created successfully! Redirecting...' })
+      }
       
       // Success - show success message and redirect
-      setValidationErrors({ success: 'Tour created successfully! Redirecting...' })
       setTimeout(() => {
         navigate('/admin/tours')
       }, 2000)
@@ -373,8 +446,12 @@ const CreateTourForm = () => {
     <div className="min-h-screen bg-secondary-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Tour</h1>
-          <p className="text-gray-600">Fill in the details below to create a new tour</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            {isEditMode ? 'Edit Tour' : 'Create New Tour'}
+          </h1>
+          <p className="text-gray-600">
+            {isEditMode ? 'Update the tour details below' : 'Fill in the details below to create a new tour'}
+          </p>
           
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <h3 className="font-medium text-blue-900 mb-2">🧪 Testing Made Easy:</h3>
@@ -984,10 +1061,10 @@ const CreateTourForm = () => {
                 {(loading || isSubmitting) ? (
                   <>
                     <LoadingSpinner size="sm" className="mr-2" />
-                    Creating Tour...
+                    {isEditMode ? 'Updating Tour...' : 'Creating Tour...'}
                   </>
                 ) : (
-                  'Create Tour'
+                  isEditMode ? 'Update Tour' : 'Create Tour'
                 )}
               </Button>
             </div>

@@ -26,6 +26,12 @@ export const tourAPI = {
 
   // Update tour (authenticated)
   updateTour: async (tourId, tourData) => {
+    // Check if tourData is FormData (for file uploads)
+    if (tourData instanceof FormData) {
+      // Don't set Content-Type for FormData - let browser set it with boundary
+      return apiClient.patch(`/tours/${tourId}`, tourData)
+    }
+    // Regular JSON data
     return apiClient.patch(`/tours/${tourId}`, tourData)
   },
 

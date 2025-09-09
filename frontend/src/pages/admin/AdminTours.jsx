@@ -310,14 +310,16 @@ const AdminTours = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {/* View tour details */}}
+                      onClick={() => navigate(`/tours/${tour._id}`)}
+                      title="View tour details"
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {/* Edit tour */}}
+                      onClick={() => navigate(`/admin/tours/${tour._id}/edit`)}
+                      title="Edit tour"
                     >
                       <Edit className="w-4 h-4" />
                     </Button>

@@ -47,13 +47,18 @@ const tourSchema = new mongoose.Schema(
     },
     priceDiscount: {
       type: Number,
-      validate: {
-        validator: function (val) {
-          // this only points to current doc on NEW document creation
-          return val < this.price;
-        },
-        message: "Discount price ({VALUE}) should be below regular price",
-      },
+      // Temporarily disable schema validation - we'll handle it in middleware
+      // validate: {
+      //   validator: function (val) {
+      //     // If priceDiscount is not provided or is 0, it's valid
+      //     if (!val || val === 0) return true;
+      //     
+      //     // For new documents, this.price is the current price
+      //     // For updates, this.price might be the old price, so we'll handle this in pre-save
+      //     return val < this.price;
+      //   },
+      //   message: "Discount price ({VALUE}) should be below regular price",
+      // },
     },
     summary: {
       type: String,
@@ -166,6 +171,52 @@ tourSchema.index({ maxGroupSize: 1 });
 // DOCUMENT MIDDLEWARE: runs before .save() and .create()
 tourSchema.pre("save", function (next) {
   this.slug = slugify(this.name, { lower: true });
+  
+  // Validate priceDiscount against current price
+  if (this.priceDiscount && this.priceDiscount > 0 && this.priceDiscount >= this.price) {
+    const error = new Error(`Discount price (${this.priceDiscount}) should be below regular price (${this.price})`);
+    error.name = 'ValidationError';
+    return next(error);
+  }
+  
+  next();
+});
+
+// PRE-UPDATE MIDDLEWARE: runs before findOneAndUpdate, findOneAndDelete, etc.
+tourSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function (next) {
+  const update = this.getUpdate();
+  
+  console.log('🔍 Pre-update middleware - Full update object:', JSON.stringify(update, null, 2));
+  
+  // Check if both price and priceDiscount are being updated
+  if (update.price && update.priceDiscount && update.priceDiscount > 0) {
+    const price = parseFloat(update.price);
+    const priceDiscount = parseFloat(update.priceDiscount);
+    
+    console.log(`🔍 Pre-update validation: price=${price}, priceDiscount=${priceDiscount}`);
+    console.log(`💰 Comparison: ${priceDiscount} >= ${price} = ${priceDiscount >= price}`);
+    
+    if (priceDiscount >= price) {
+      const error = new Error(`Discount price (${priceDiscount}) should be below regular price (${price})`);
+      error.name = 'ValidationError';
+      return next(error);
+    }
+  }
+  
+  // Check if only priceDiscount is being updated
+  if (update.priceDiscount && update.priceDiscount > 0 && !update.price) {
+    // We need to get the current price from the database
+    this.findOne({}, 'price').then(doc => {
+      if (doc && update.priceDiscount >= doc.price) {
+        const error = new Error(`Discount price (${update.priceDiscount}) should be below regular price (${doc.price})`);
+        error.name = 'ValidationError';
+        return next(error);
+      }
+      next();
+    }).catch(next);
+    return;
+  }
+  
   next();
 });
 

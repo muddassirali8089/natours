@@ -77,7 +77,13 @@ router.get("/:id", getTour);
 
 // PATCH /api/v1/tours/:id
 // ✅ Only lead-guides and admins can update tours
-router.patch("/:id", protect, restrictTo("lead-guide", "admin"), updateTour);
+router.patch("/:id", protect, restrictTo("lead-guide", "admin"), 
+  upload.fields([
+    { name: 'coverImage', maxCount: 1 },
+    { name: 'images', maxCount: 10 }
+  ]), 
+  updateTour
+);
 
 // DELETE /api/v1/tours/:id
 // ✅ Only admins can delete tours
