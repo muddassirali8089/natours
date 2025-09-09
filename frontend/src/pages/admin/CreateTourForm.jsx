@@ -89,6 +89,25 @@ const CreateTourForm = () => {
   // Populate form when tour data is loaded (edit mode)
   useEffect(() => {
     if (isEditMode && tour) {
+      console.log('🔄 EDIT MODE - Tour data loaded:')
+      console.log('📋 Full tour object:', tour)
+      console.log('📊 Tour details:')
+      console.log('  - ID:', tour._id)
+      console.log('  - Name:', tour.name)
+      console.log('  - Duration:', tour.duration)
+      console.log('  - Max Group Size:', tour.maxGroupSize)
+      console.log('  - Difficulty:', tour.difficulty)
+      console.log('  - Price:', tour.price)
+      console.log('  - Price Discount:', tour.priceDiscount)
+      console.log('  - Summary:', tour.summary)
+      console.log('  - Description:', tour.description)
+      console.log('  - Secret Tour:', tour.secretTour)
+      console.log('  - Start Location:', tour.startLocation)
+      console.log('  - Start Dates:', tour.startDates)
+      console.log('  - Locations:', tour.locations)
+      console.log('  - Image Cover:', tour.imageCover)
+      console.log('  - Images:', tour.images)
+      
       // Set form values
       setValue('name', tour.name || '')
       setValue('duration', tour.duration || '')
@@ -110,6 +129,13 @@ const CreateTourForm = () => {
   // Validation function
   const validateForm = (data) => {
     const errors = {}
+    
+    console.log('🔍 VALIDATION DEBUG:')
+    console.log('  - Form data:', data)
+    console.log('  - Start dates state:', startDates)
+    console.log('  - Locations state:', locations)
+    console.log('  - Start location from form:', data.startLocation)
+    console.log('  - Start location from watch:', watch('startLocation.address'))
     
     // Basic field validation
     if (!data.name || data.name.trim().length < 3) {
@@ -140,25 +166,25 @@ const CreateTourForm = () => {
       errors.summary = 'Summary must be at least 10 characters long'
     }
     
-    if (!data.description || data.description.trim().length < 20) {
-      errors.description = 'Description must be at least 20 characters long'
-    }
+    // Description is optional - no validation needed
     
     if (!data.difficulty || !['easy', 'medium', 'difficult'].includes(data.difficulty)) {
       errors.difficulty = 'Please select a valid difficulty level'
     }
     
-    // Start location validation
-    if (!data.startLocation?.address || data.startLocation.address.trim().length < 5) {
-      errors.startLocation = 'Start location address is required and must be at least 5 characters'
+    // Start location validation - check both form data and watch value
+    const startLocationAddress = data.startLocation?.address || watch('startLocation.address')
+    if (!startLocationAddress || startLocationAddress.trim().length < 1) {
+      errors.startLocation = 'Start location address is required'
     }
     
-    // Start dates validation
-    if (!startDates || startDates.length === 0) {
+    // Start dates validation - check both state and form data
+    const currentStartDates = startDates && startDates.length > 0 ? startDates : []
+    if (currentStartDates.length === 0) {
       errors.startDates = 'At least one start date is required'
     } else {
-      for (let i = 0; i < startDates.length; i++) {
-        const date = new Date(startDates[i])
+      for (let i = 0; i < currentStartDates.length; i++) {
+        const date = new Date(currentStartDates[i])
         if (isNaN(date.getTime())) {
           errors.startDates = `Invalid date format for start date ${i + 1}`
           break
@@ -167,14 +193,15 @@ const CreateTourForm = () => {
       }
     }
     
-    // Locations validation
-    if (!locations || locations.length === 0) {
+    // Locations validation - check both state and form data
+    const currentLocations = locations && locations.length > 0 ? locations : []
+    if (currentLocations.length === 0) {
       errors.locations = 'At least one location is required'
     } else {
-      for (let i = 0; i < locations.length; i++) {
-        const location = locations[i]
-        if (!location.address || location.address.trim().length < 5) {
-          errors.locations = `Location ${i + 1} address is required and must be at least 5 characters`
+      for (let i = 0; i < currentLocations.length; i++) {
+        const location = currentLocations[i]
+        if (!location.address || location.address.trim().length < 1) {
+          errors.locations = `Location ${i + 1} address is required`
           break
         }
         if (!location.day || isNaN(location.day) || location.day < 1) {
@@ -188,10 +215,10 @@ const CreateTourForm = () => {
       }
     }
     
-    // Image validation
-    if (!coverImageFile) {
+    // Image validation - only require new image if not in edit mode or no existing image
+    if (!isEditMode && !coverImageFile) {
       errors.coverImage = 'Cover image is required'
-    } else {
+    } else if (coverImageFile) {
       // Check file size (5MB limit)
       if (coverImageFile.size > 5 * 1024 * 1024) {
         errors.coverImage = 'Cover image must be less than 5MB'
@@ -637,12 +664,12 @@ const CreateTourForm = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description *
+                  Description
                 </label>
                 <textarea
-                  {...register('description', { required: 'Description is required' })}
+                  {...register('description')}
                   rows={6}
-                  placeholder="Detailed description of the tour, what's included, itinerary, etc."
+                  placeholder="Detailed description of the tour, what's included, itinerary, etc. (optional)"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 {errors.description && (
