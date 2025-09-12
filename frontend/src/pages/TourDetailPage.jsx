@@ -270,7 +270,7 @@ const TourDetailPage = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Booking Card */}
-            <Card className="sticky top-8">
+            <Card className="sticky top-20">
               <CardContent className="p-6">
                 <div className="text-center mb-6">
                   <div className="text-3xl font-bold text-primary-600 mb-2">
