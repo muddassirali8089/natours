@@ -34,6 +34,7 @@ const SignupPage = () => {
       toast.success('Account created successfully! Please check your email to verify your account.')
       navigate('/login')
     } catch (error) {
+      console.log(error);
       toast.error(error || 'Signup failed')
     }
   }
@@ -106,13 +107,7 @@ const SignupPage = () => {
                     },
                   })}
                 />
-                <button
-                  type="button"
-                  className="absolute right-3 top-8 text-secondary-400 hover:text-secondary-600"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+                
               </div>
 
               <div>

@@ -315,8 +315,8 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
   await user.save({ validateBeforeSave: false });
 
   // Create frontend URL for password reset
-  const frontendURL = process.env.FRONTEND_URL || 'http://localhost:3000';
-  const resetURL = `${frontendURL}/reset-password/${resetToken}`;
+  const frontendURL =  'http://localhost:8000';
+  const resetURL = `${frontendURL}/api/v1/users/reset-password/${resetToken}`;
   
   // Create HTML email template
   const htmlMessage = `

@@ -33,7 +33,7 @@ const HomePage = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/tours">
-                <Button size="lg" className="bg-white text-primary-600 hover:bg-primary-50">
+                <Button variant="outline" size="lg" className="border-white hover:bg-white hover:text-primary-600">
                   Explore Tours
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
@@ -126,7 +126,7 @@ const HomePage = () => {
                 <div key={tour._id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="relative">
                     <img
-                      src={`/img/tours/${tour.imageCover}`}
+                      src={tour.imageCover}
                       alt={tour.name}
                       className="w-full h-48 object-cover"
                     />
@@ -200,7 +200,7 @@ const HomePage = () => {
             Join thousands of satisfied travelers who have discovered the world with Natours.
           </p>
           <Link to="/tours">
-            <Button size="lg" className="bg-white text-primary-600 hover:bg-primary-50">
+            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-primary-600">
               Start Your Journey
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
