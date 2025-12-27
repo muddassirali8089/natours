@@ -9,6 +9,8 @@ import {
   updateMyPassword,
   protect,
   restrictTo,
+  resetPasswordPage,
+  resetPasswordPost,
 } from "../controllers/authContrller.js";
 import {
   getMe,
@@ -22,6 +24,7 @@ import {
 } from "../controllers/user.controller.js";
 import { loginLimiter, generalLimiter } from "../utils/rateLimiters.js";
 import { verifyEmail } from "../controllers/verifyEmail.js";
+import { verifyEmailPage } from "../controllers/verifyEmailPage.js";
 
 // Configure multer for memory storage (for Cloudinary)
 const upload = multer({ 
@@ -44,8 +47,12 @@ const router = express.Router();
 router.post("/signup", signup);
 router.post("/login", loginLimiter, login);
 router.post("/logout", logout);
+router.get("/verify-email/:token", verifyEmailPage);
 router.patch("/verify-email/:token", verifyEmail);
 router.post("/forgotPassword", generalLimiter, forgotPassword);
+router.get("/resetPassword/:token", resetPasswordPage);
+// POST route - handles form submission
+router.post("/resetPassword/:token", resetPasswordPost);
 router.patch("/resetPassword/:token", generalLimiter, resetPassword);
 
 // Protected routes - User can manage their own account

@@ -29,10 +29,11 @@ process.on("uncaughtException", (err) => {
 dotenv.config(); // Load config.env
 const app = express();
 app.use(helmet());
+app.use(express.urlencoded({ extended: true }));
 
 // ✅ CORS configuration for development
 app.use(cors({
-  origin: 'http://localhost:3000', // Frontend URL
+  origin: process.env.FRONTEND_URL, // Frontend URL
   credentials: true, // Allow credentials (cookies, authorization headers)
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -66,6 +67,10 @@ app.use((req, res, next) => {
     });
   }
   next();
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
 });
 
 app.use(generalLimiter);

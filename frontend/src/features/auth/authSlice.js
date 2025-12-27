@@ -32,15 +32,21 @@ export const login = createAsyncThunk(
 
 export const signup = createAsyncThunk(
   "auth/signup",
-  async (userData, { rejectWithValue }) => {
+  async (data, { rejectWithValue }) => {
     try {
-      const response = await authAPI.signup(userData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Signup failed");
+      const response = await authAPI.signup(data);
+      return response;
+    } catch (err) {
+      // Grab the real error message from your ApiClient
+      const message =
+        err?.message || "Signup failed"; // your ApiClient throws `Error("Email already registered...")`
+      
+      // This sends it to Redux state -> selectAuthError
+      return rejectWithValue(message);
     }
   }
 );
+
 
 export const logout = createAsyncThunk(
   "auth/logout",

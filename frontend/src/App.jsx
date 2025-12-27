@@ -26,6 +26,7 @@ import NotFoundPage from './pages/NotFoundPage'
 
 // Protected Route Component
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import VerifyEmail from './components/VerifyEmail'
 
 function App() {
   const dispatch = useDispatch()
@@ -56,6 +57,7 @@ function App() {
           
           {/* Auth Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />

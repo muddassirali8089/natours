@@ -17,6 +17,7 @@ const SignupPage = () => {
   const navigate = useNavigate()
   
   const error = useSelector(selectAuthError)
+
   const isLoading = useSelector(selectAuthLoading)
 
   const {
@@ -34,7 +35,8 @@ const SignupPage = () => {
       toast.success('Account created successfully! Please check your email to verify your account.')
       navigate('/login')
     } catch (error) {
-      console.log(error);
+      
+      
       toast.error(error || 'Signup failed')
     }
   }
